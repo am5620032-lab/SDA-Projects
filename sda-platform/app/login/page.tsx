@@ -1,71 +1,58 @@
  'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
-export default function Dashboard() {
-  const [userName, setUserName] = useState('جاري التحميل...')
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
 
-  useEffect(() => {
-    const getUser = async () => {
-      const supabase = createClient()
-      
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-      } else {
-        // جلب الاسم من جدول profiles
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .single()
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
-        if (data) {
-          setUserName(data.full_name)
-        } else {
-          console.error(error)
-          setUserName('مستخدم') // إذا لم يجد الاسم يضع كلمة مستخدم
-        }
-      }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      setError('بيانات الدخول غير صحيحة. يرجى التأكد من البريد وكلمة المرور.')
+      setLoading(false)
+    } else {
+      router.push('/dashboard')
     }
-    getUser()
-  }, [router]) // تم إزالة supabase من هنا لمنع التحديث اللانهائي
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-slate-100 p-8 font-sans">
-      <div className="max-w-4xl mx-auto">
-        <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm mb-8">
+    <main dir="rtl" className="flex min-h-screen items-center justify-center bg-slate-100 p-8 font-sans">
+      <div className="bg-white p-10 rounded-2xl shadow-xl max-w-md w-full border-t-4 border-blue-800">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-blue-900 mb-2">تسجيل الدخول</h1>
+          <p className="text-gray-500 text-sm">منصة جهاز تنمية وتطوير الجنوب</p>
+        </div>
+
+        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center">{error}</div>}
+
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <h1 className="text-2xl font-bold text-blue-900">لوحة التحكم</h1>
-            <p className="text-gray-500">مرحباً بك، <span className="font-bold text-blue-800">{userName}</span></p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2 border rounded-lg text-left" dir="ltr" />
           </div>
-          <button onClick={handleLogout} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition font-semibold">
-            تسجيل الخروج
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-2 border rounded-lg text-left" dir="ltr" />
+          </div>
+          <button type="submit" disabled={loading} className="w-full bg-blue-800 text-white font-bold py-3 rounded-lg">
+            {loading ? 'جاري الدخول...' : 'دخول'}
           </button>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border-r-4 border-blue-500">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">منظومة شؤون الموظفين</h2>
-            <p className="text-gray-500 text-sm mb-4">إدارة بيانات الموظفين، الحضور، والرواتب.</p>
-            <button className="text-blue-600 font-semibold hover:underline">الدخول للمنظومة ←</button>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border-r-4 border-green-500">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">منظومة الأرشيف</h2>
-            <p className="text-gray-500 text-sm mb-4">رفع، وتوثيق، والبحث في المراسلات والوثائق.</p>
-            <button className="text-green-600 font-semibold hover:underline">الدخول للمنظومة ←</button>
-          </div>
+        </form>
+        <div className="mt-6 text-center">
+          <Link href="/" className="text-sm text-blue-600 hover:underline">العودة للصفحة الرئيسية</Link>
         </div>
       </div>
     </main>
