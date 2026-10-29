@@ -47,7 +47,7 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-2 border rounded-lg text-left" dir="ltr" />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-blue-800 text-white font-bold py-3 rounded-lg">
+          <button type="submit" disabled={loading} className="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded-lg transition-all duration-300">
             {loading ? 'جاري الدخول...' : 'دخول'}
           </button>
         </form>

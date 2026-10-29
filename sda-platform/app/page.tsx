@@ -1,20 +1,37 @@
- import Link from 'next/link'
+ import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export default function Home() {
-  return (
-    <main dir="rtl" className="flex min-h-screen flex-col items-center justify-center bg-slate-100 p-8 font-sans">
-      <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-2xl w-full border-t-4 border-blue-800">
-        <div className="mb-6 flex justify-center">
-          <div className="h-28 w-28 bg-white rounded-full flex items-center justify-center border-4 border-blue-800 shadow-md">
-            <span className="text-blue-800 text-3xl font-bold">SDA</span>
-          </div>
-        </div>
-        <h1 className="text-3xl font-bold text-blue-900 mb-4 whitespace-nowrap">جهاز تنمية وتطوير الجنوب</h1>
-        <p className="text-gray-500 mb-8 text-sm">النظام الإداري المتكامل</p>
-        <Link href="/login" className="block bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-8 rounded-lg w-full transition-all duration-300 text-center">
-          تسجيل الدخول
-        </Link>
-      </div>
-    </main>
-  );
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    'https://wwkqubtedygxwmjhhoza.supabase.co',
+    'sb_publishable_ifIVn5dWU46YAL8u_9Tyew_T5B8CtRu',
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*'],
 }
