@@ -1,12 +1,10 @@
 'use client'
 
 import {
-  Archive,
   ArrowLeftRight,
   CalendarCheck2,
   CalendarDays,
   ChevronDown,
-  FolderOpen,
   LayoutDashboard,
   Menu,
   Network,
@@ -19,8 +17,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-
-const archiveRoles = ['it_manager', 'president', 'vice_president', 'admin_manager']
 
 function NavigationLink({
   href,
@@ -53,7 +49,6 @@ export default function Sidebar() {
   const [userRole, setUserRole] = useState('')
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [employeesExpanded, setEmployeesExpanded] = useState(() => pathname.startsWith('/dashboard/employees'))
-  const [archiveExpanded, setArchiveExpanded] = useState(() => pathname.startsWith('/dashboard/archive'))
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -101,24 +96,6 @@ export default function Sidebar() {
         )}
       </section>
 
-      {archiveRoles.includes(userRole) && (
-        <section>
-          <button
-            type="button"
-            onClick={() => setArchiveExpanded((expanded) => !expanded)}
-            aria-expanded={archiveExpanded}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-right text-sm font-bold text-gray-800 transition hover:bg-gray-50"
-          >
-            <span className="flex items-center gap-3"><Archive size={18} className="text-amber-600" aria-hidden="true" />منظومة الأرشيف</span>
-            <ChevronDown size={16} className={`transition-transform ${archiveExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
-          </button>
-          {archiveExpanded && (
-            <nav aria-label="أقسام الأرشيف" className="mr-3 mt-1 space-y-1 border-r border-gray-200 pr-3">
-              <NavigationLink href="/dashboard/archive" onClick={closeMobileMenu}><FolderOpen size={16} aria-hidden="true" />الرئيسية</NavigationLink>
-            </nav>
-          )}
-        </section>
-      )}
     </>
   )
 

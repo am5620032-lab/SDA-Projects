@@ -84,6 +84,7 @@ interface AdminDatabase {
           id: string
           full_name: string
           employee_number: string | null
+          national_id: string | null
           department_id: string | null
           direct_manager_id: string | null
         }
@@ -91,6 +92,7 @@ interface AdminDatabase {
           id?: string
           full_name: string
           employee_number?: string | null
+          national_id?: string | null
           department_id?: string | null
           direct_manager_id?: string | null
         }
@@ -98,6 +100,7 @@ interface AdminDatabase {
           id?: string
           full_name?: string
           employee_number?: string | null
+          national_id?: string | null
           department_id?: string | null
           direct_manager_id?: string | null
         }

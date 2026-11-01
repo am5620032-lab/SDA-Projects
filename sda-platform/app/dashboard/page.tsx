@@ -6,11 +6,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 
-const archiveRoles = ['it_manager', 'president', 'vice_president', 'admin_manager']
-
 export default function Dashboard() {
   const [userName, setUserName] = useState('جاري التحميل...')
-  const [userRole, setUserRole] = useState('')
   const [profileError, setProfileError] = useState('')
   const router = useRouter()
 
@@ -26,13 +23,12 @@ export default function Dashboard() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, role')
+        .select('full_name')
         .eq('id', user.id)
         .single()
       if (error) throw error
 
       setUserName(data.full_name)
-      setUserRole(data.role)
     }
 
     void loadProfile().catch((error: unknown) => {
@@ -59,14 +55,14 @@ export default function Dashboard() {
       iconClass: 'bg-emerald-50 text-[#157A3F]',
       borderClass: 'border-[#157A3F]',
     },
-    ...(archiveRoles.includes(userRole) ? [{
+    {
       title: 'منظومة الأرشيف',
       description: 'الوصول إلى منظومة حفظ الوثائق والمراسلات الإدارية.',
-      href: '/dashboard/archive',
+      href: '/archive/login',
       icon: Archive,
       iconClass: 'bg-amber-50 text-amber-700',
       borderClass: 'border-[#F4B41A]',
-    }] : []),
+    },
   ]
 
   return (

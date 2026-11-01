@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { logAction } from '@/app/actions/log-action'
+import type { DepartmentWithManager } from '@/types/department'
 
 interface Employee {
   id: string; full_name: string; national_id: string; employee_number: string; work_start_date: string | null;
@@ -12,6 +13,9 @@ interface Employee {
   grade: string; basic_salary: number; variable_salary: number; phone: string;
   address: string; employment_status: string; delegation_entity: string; branch: string;
   job_type: string; notes: string; photo_url: string | null; delegation_start_date: string | null;
+  department_id: string | null; direct_manager_id: string | null;
+  department_info: { name: string } | { name: string }[] | null
+  direct_manager_info: { full_name: string } | { full_name: string }[] | null
 }
 
 interface PendingLeave {
@@ -23,6 +27,7 @@ interface PendingLeave {
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [departments, setDepartments] = useState<DepartmentWithManager[]>([])
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState('')
   const [employeeCount, setEmployeeCount] = useState<number | null>(null)
@@ -50,6 +55,7 @@ export default function EmployeesPage() {
     qualification: '', major: '', university: '', hire_date: '', job_title: '', department: '', 
     grade: '', basic_salary: '', variable_salary: '', phone: '', address: '', 
     employment_status: 'on_duty', delegation_entity: '', branch: 'الإدارة الرئيسيه / طرابلس',
+    department_id: '', direct_manager_id: '',
     job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: ''
   })
 
@@ -66,9 +72,12 @@ export default function EmployeesPage() {
         return
       }
 
-      const [profileResult, employeesResult, employeeCountResult, pendingCountResult, pendingLeavesResult] = await Promise.all([
+      const [profileResult, employeesResult, departmentsResult, employeeCountResult, pendingCountResult, pendingLeavesResult] = await Promise.all([
         supabase.from('profiles').select('role').eq('id', user.id).single(),
-        supabase.from('employees').select('*').order('created_at', { ascending: false }),
+        supabase.from('employees')
+          .select('*, department_info:departments!employees_department_id_fkey(name), direct_manager_info:employees!employees_direct_manager_id_fkey(full_name)')
+          .order('created_at', { ascending: false }),
+        supabase.from('departments').select('id, name, type, parent_id, manager_id, created_at').order('name'),
         supabase.from('employees').select('id', { count: 'exact', head: true }),
         supabase.from('leaves').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('leaves')
@@ -80,9 +89,11 @@ export default function EmployeesPage() {
 
       if (profileResult.error) throw profileResult.error
       if (employeesResult.error) throw employeesResult.error
+      if (departmentsResult.error) throw departmentsResult.error
 
       setUserRole(profileResult.data.role)
       setEmployees(employeesResult.data ?? [])
+      setDepartments(departmentsResult.data ?? [])
       setEmployeeCount(employeeCountResult.count ?? 0)
 
       const counts = new Map<string, number>([
@@ -219,6 +230,8 @@ export default function EmployeesPage() {
       delegation_start_date: ['delegated', 'seconded'].includes(formData.employment_status)
         ? formData.delegation_start_date || null
         : null,
+      department_id: formData.department_id || null,
+      direct_manager_id: formData.direct_manager_id || null,
     };
 
     let saveError
@@ -413,7 +426,9 @@ export default function EmployeesPage() {
       notes: emp.notes || '',
       photo_url: emp.photo_url || '',
       delegation_start_date: emp.delegation_start_date || '',
-      work_start_date: emp.work_start_date || ''
+      work_start_date: emp.work_start_date || '',
+      department_id: emp.department_id || '',
+      direct_manager_id: emp.direct_manager_id || '',
     })
     setIsModalOpen(true)
     setActiveTab('basic')
@@ -437,6 +452,7 @@ export default function EmployeesPage() {
       qualification: '', major: '', university: '', hire_date: '', job_title: '', department: '', 
       grade: '', basic_salary: '', variable_salary: '', phone: '', address: '', 
       employment_status: 'on_duty', delegation_entity: '', branch: 'الإدارة الرئيسيه / طرابلس',
+      department_id: '', direct_manager_id: '',
       job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: ''
     })
     setIsModalOpen(true)
@@ -551,6 +567,8 @@ export default function EmployeesPage() {
                       <th className="p-3">الاسم</th>
                       <th className="p-3">الوظيفة</th>
                       <th className="p-3">الفرع</th>
+                      <th className="p-3">الإدارة/المكتب</th>
+                      <th className="p-3">المدير المباشر</th>
                       <th className="p-3">الدرجة</th>
                       <th className="p-3">الحالة</th>
                       <th className="p-3 text-center">الإجراءات</th>
@@ -562,6 +580,12 @@ export default function EmployeesPage() {
                         <td className="p-3 font-medium">{emp.full_name}</td>
                         <td className="p-3">{emp.job_title || '-'}</td>
                         <td className="p-3 font-bold text-blue-700">{emp.branch || 'الإدارة الرئيسيه / طرابلس'}</td>
+                        <td className="p-3">
+                          {(Array.isArray(emp.department_info) ? emp.department_info[0]?.name : emp.department_info?.name) || '-'}
+                        </td>
+                        <td className="p-3">
+                          {(Array.isArray(emp.direct_manager_info) ? emp.direct_manager_info[0]?.full_name : emp.direct_manager_info?.full_name) || '-'}
+                        </td>
                         <td className="p-3 font-bold text-[#157A3F]">{emp.grade || '-'}</td>
                         <td className="p-3">
                           <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">{getStatusText(emp.employment_status)}</span>
@@ -809,6 +833,26 @@ export default function EmployeesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><label className="block text-sm mb-1">الوظيفة</label><input type="text" value={formData.job_title} onChange={(e) => setFormData({...formData, job_title: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div><label className="block text-sm mb-1">الإدارة/القسم</label><input type="text" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div>
+                      <label className="mb-1 block text-sm">الإدارة/المكتب</label>
+                      <select value={formData.department_id} onChange={(e) => setFormData({ ...formData, department_id: e.target.value })} className="w-full rounded-lg border px-4 py-2">
+                        <option value="">غير محددة</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.id}>
+                            {department.name}{department.type ? ` (${department.type})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm">المدير المباشر</label>
+                      <select value={formData.direct_manager_id} onChange={(e) => setFormData({ ...formData, direct_manager_id: e.target.value })} className="w-full rounded-lg border px-4 py-2">
+                        <option value="">غير محدد</option>
+                        {employees.filter((employee) => employee.id !== editingId).map((employee) => (
+                          <option key={employee.id} value={employee.id}>{employee.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-sm mb-1 font-bold text-blue-700">الفرع</label>
                       <select value={formData.branch} onChange={(e) => setFormData({...formData, branch: e.target.value})} className="w-full px-4 py-2 border rounded-lg">
