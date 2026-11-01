@@ -1,66 +1,116 @@
- 'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { Archive, UsersRound } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
+
+const archiveRoles = ['it_manager', 'president', 'vice_president', 'admin_manager']
 
 export default function Dashboard() {
   const [userName, setUserName] = useState('جاري التحميل...')
+  const [userRole, setUserRole] = useState('')
+  const [profileError, setProfileError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    const getUser = async () => {
+    const loadProfile = async () => {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
       if (!user) {
         router.push('/login')
-      } else {
-        const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
-        if (data) setUserName(data.full_name)
+        return
       }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', user.id)
+        .single()
+      if (error) throw error
+
+      setUserName(data.full_name)
+      setUserRole(data.role)
     }
-    getUser()
+
+    void loadProfile().catch((error: unknown) => {
+      setProfileError(error instanceof Error ? error.message : 'تعذر تحميل بيانات المستخدم.')
+    })
   }, [router])
 
   const handleLogout = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      setProfileError(`تعذر تسجيل الخروج: ${error.message}`)
+      return
+    }
+    router.push('/login')
   }
 
+  const systems = [
+    {
+      title: 'منظومة شؤون الموظفين',
+      description: 'إدارة الموظفين والحضور والإجازات والترقيات والملفات الوظيفية.',
+      href: '/dashboard/employees',
+      icon: UsersRound,
+      iconClass: 'bg-emerald-50 text-[#157A3F]',
+      borderClass: 'border-[#157A3F]',
+    },
+    ...(archiveRoles.includes(userRole) ? [{
+      title: 'منظومة الأرشيف',
+      description: 'الوصول إلى منظومة حفظ الوثائق والمراسلات الإدارية.',
+      href: '/dashboard/archive',
+      icon: Archive,
+      iconClass: 'bg-amber-50 text-amber-700',
+      borderClass: 'border-[#F4B41A]',
+    }] : []),
+  ]
+
   return (
-    <main dir="rtl" className="min-h-screen bg-slate-50 p-8 font-sans">
-      <div className="max-w-4xl mx-auto">
-        <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm mb-8 border-r-8 border-[#157A3F]">
-          <div>
-            <h1 className="text-2xl font-bold text-[#157A3F]">لوحة التحكم</h1>
-            <p className="text-gray-600">مرحباً بك، <span className="font-bold text-[#F4B41A]">{userName}</span></p>
+    <main dir="rtl" className="min-h-screen bg-slate-50 p-4 font-sans md:p-8">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-8 flex items-center justify-between gap-4 rounded-xl border-r-8 border-[#157A3F] bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <img src="/logo.jpg" alt="شعار الجهاز" className="h-14 w-auto object-contain" />
+            <div>
+              <h1 className="text-2xl font-bold text-[#157A3F]">بوابة المنظومات</h1>
+              <p className="mt-1 text-gray-600">مرحباً بك يا <span className="font-bold text-[#F4B41A]">{userName}</span></p>
+            </div>
           </div>
-          <button onClick={handleLogout} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition font-semibold border border-red-200">
+          <button onClick={handleLogout} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-100">
             تسجيل الخروج
           </button>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* بطاقة الموظفين */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border-r-8 border-[#157A3F]">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">منظومة شؤون الموظفين</h2>
-            <p className="text-gray-500 text-sm mb-4">إدارة بيانات الموظفين، الحضور، والرواتب.</p>
-            <button className="text-[#157A3F] font-bold hover:underline flex items-center gap-2">
-              الدخول للمنظومة <span>←</span>
-            </button>
-          </div>
+        {profileError && <p role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">{profileError}</p>}
 
-          {/* بطاقة الأرشيف */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border-r-8 border-[#F4B41A]">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">منظومة الأرشيف</h2>
-            <p className="text-gray-500 text-sm mb-4">رفع، وتوثيق، والبحث في المراسلات والوثائق.</p>
-            <button className="text-[#F4B41A] font-bold hover:underline flex items-center gap-2">
-              الدخول للمنظومة <span>←</span>
-            </button>
+        <section aria-labelledby="systems-heading">
+          <div className="mb-6">
+            <h2 id="systems-heading" className="text-xl font-bold text-gray-800">اختر المنظومة</h2>
+            <p className="mt-1 text-sm text-gray-500">ابدأ العمل باختيار إحدى المنظومات المتاحة لحسابك.</p>
           </div>
-        </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {systems.map(({ title, description, href, icon: Icon, iconClass, borderClass }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`group rounded-2xl border-r-8 ${borderClass} bg-white p-7 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#157A3F]`}
+              >
+                <span className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${iconClass}`}>
+                  <Icon size={34} strokeWidth={1.8} aria-hidden="true" />
+                </span>
+                <h3 className="text-xl font-bold text-gray-800 transition group-hover:text-[#157A3F]">{title}</h3>
+                <p className="mt-3 leading-7 text-gray-500">{description}</p>
+                <span className="mt-6 inline-flex items-center gap-2 font-bold text-[#157A3F]">
+                  الدخول إلى المنظومة <span aria-hidden="true">←</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   )

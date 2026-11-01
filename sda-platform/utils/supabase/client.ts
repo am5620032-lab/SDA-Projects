@@ -1,8 +1,6 @@
- import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient } from '@supabase/ssr'
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from './config'
 
 export function createClient() {
-  return createBrowserClient(
-    'https://wwkqubtedygxwmjhhoza.supabase.co',
-    'sb_publishable_ifIVn5dWU46YAL8u_9Tyew_T5B8CtRu'
-  )
+  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 }

@@ -1,1 +1,67 @@
- @import "tailwindcss";
+@import "tailwindcss";
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .leave-print-sheet,
+  .leave-print-sheet * {
+    visibility: visible !important;
+  }
+
+  .leave-print-sheet {
+    position: fixed !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  .employee-file-print-sheet,
+  .employee-file-print-sheet * {
+    visibility: visible !important;
+  }
+
+  .employee-file-print-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  body.printing-employee-card * {
+    visibility: hidden !important;
+  }
+
+  body.printing-employee-card .employee-id-card,
+  body.printing-employee-card .employee-id-card * {
+    visibility: visible !important;
+  }
+
+  body.printing-employee-card .employee-id-card {
+    position: fixed !important;
+    inset: 0 auto auto 0 !important;
+    width: 350px !important;
+    height: 200px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
