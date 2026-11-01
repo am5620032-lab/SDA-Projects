@@ -9,6 +9,7 @@ import {
   FolderOpen,
   LayoutDashboard,
   Menu,
+  Network,
   Package,
   ShieldCheck,
   UsersRound,
@@ -89,6 +90,7 @@ export default function Sidebar() {
         {employeesExpanded && (
           <nav aria-label="أقسام شؤون الموظفين" className="mr-3 mt-1 space-y-1 border-r border-gray-200 pr-3">
             <NavigationLink href="/dashboard/employees" onClick={closeMobileMenu}><UsersRound size={16} aria-hidden="true" />إدارة الموظفين</NavigationLink>
+            <NavigationLink href="/dashboard/employees/organization" onClick={closeMobileMenu}><Network size={16} aria-hidden="true" />الهيكل التنظيمي</NavigationLink>
             <NavigationLink href="/dashboard/employees/attendance" onClick={closeMobileMenu}><CalendarCheck2 size={16} aria-hidden="true" />الحضور والانصراف</NavigationLink>
             <NavigationLink href="/dashboard/leaves" onClick={closeMobileMenu}><CalendarDays size={16} aria-hidden="true" />الإجازات</NavigationLink>
             <NavigationLink href="/dashboard/employees/promotions" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />الترقيات والعلاوات</NavigationLink>

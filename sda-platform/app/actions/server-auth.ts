@@ -52,6 +52,57 @@ interface AdminDatabase {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          id: string
+          name: string
+          type: string
+          parent_id: string | null
+          manager_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          type: string
+          parent_id?: string | null
+          manager_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: string
+          parent_id?: string | null
+          manager_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      employees: {
+        Row: {
+          id: string
+          full_name: string
+          employee_number: string | null
+          department_id: string | null
+          direct_manager_id: string | null
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          employee_number?: string | null
+          department_id?: string | null
+          direct_manager_id?: string | null
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          employee_number?: string | null
+          department_id?: string | null
+          direct_manager_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
