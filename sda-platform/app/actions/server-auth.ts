@@ -613,9 +613,56 @@ export interface AdminDatabase {
         }
         Relationships: []
       }
+      archive_documents: {
+        Row: {
+          id: string
+          document_number: string
+          document_name: string
+          document_type: string
+          classification: string
+          employee_id: string | null
+          file_url: string
+          file_type: string
+          status: string
+          uploaded_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          document_number: string
+          document_name: string
+          document_type: string
+          classification: string
+          employee_id?: string | null
+          file_url: string
+          file_type: string
+          status?: string
+          uploaded_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          document_number?: string
+          document_name?: string
+          document_type?: string
+          classification?: string
+          employee_id?: string | null
+          file_url?: string
+          file_type?: string
+          status?: string
+          uploaded_by?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      next_archive_document_number: {
+        Args: { p_document_type: string; p_document_year: number }
+        Returns: string
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

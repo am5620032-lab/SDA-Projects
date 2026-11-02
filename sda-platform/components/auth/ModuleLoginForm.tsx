@@ -30,7 +30,7 @@ export default function ModuleLoginForm({
         setError(result.error)
         return
       }
-      router.replace(moduleName === 'archive' ? '/archive/dashboard' : '/dashboard/employees')
+      router.replace(moduleName === 'archive' ? '/dashboard/archive' : '/dashboard/employees')
       router.refresh()
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'تعذر تسجيل الدخول إلى المنظومة.')
