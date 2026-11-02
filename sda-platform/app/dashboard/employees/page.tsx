@@ -1,29 +1,14 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { logAction } from '@/app/actions/log-action'
+import { getEmployeesDashboardData } from '@/app/dashboard/employees/actions'
+import type {
+  EmployeeDashboardLeave as PendingLeave,
+  EmployeeDashboardRecord as Employee,
+} from '@/app/dashboard/employees/actions'
 import type { DepartmentWithManager } from '@/types/department'
-
-interface Employee {
-  id: string; full_name: string; national_id: string; employee_number: string; work_start_date: string | null;
-  birth_date: string; social_status: string; qualification: string; major: string;
-  university: string; hire_date: string; job_title: string; department: string;
-  grade: string; basic_salary: number; variable_salary: number; phone: string;
-  address: string; employment_status: string; delegation_entity: string; branch: string;
-  job_type: string; notes: string; photo_url: string | null; delegation_start_date: string | null;
-  department_id: string | null; direct_manager_id: string | null;
-  department_info: { name: string } | { name: string }[] | null
-  direct_manager_info: { full_name: string } | { full_name: string }[] | null
-}
-
-interface PendingLeave {
-  id: string
-  leave_type: string
-  start_date: string
-  employees: { full_name: string } | { full_name: string }[] | null
-}
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -59,54 +44,19 @@ export default function EmployeesPage() {
     job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: ''
   })
 
-  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const fetchEmployees = useCallback(async () => {
     setDashboardError('')
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError) throw authError
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      const result = await getEmployeesDashboardData()
+      if ('error' in result) throw new Error(result.error)
 
-      const loadEmployees = async (): Promise<Employee[]> => {
-        try {
-          const { data, error } = await supabase.from('employees')
-            .select('*, department_info:departments!employees_department_id_fkey(name), direct_manager_info:employees!employees_direct_manager_id_fkey(full_name)')
-            .order('created_at', { ascending: false })
-          if (error) throw error
-          return data ?? []
-        } catch (error) {
-          console.error('Failed to fetch employees:', error)
-          setDashboardError(error instanceof Error
-            ? `تعذر تحميل بيانات الموظفين: ${error.message}`
-            : 'تعذر تحميل بيانات الموظفين.')
-          return []
-        }
-      }
-
-      const [profileResult, employeeRows, departmentsResult, employeeCountResult, pendingCountResult, pendingLeavesResult] = await Promise.all([
-        supabase.from('profiles').select('role').eq('id', user.id).single(),
-        loadEmployees(),
-        supabase.from('departments').select('id, name, type, parent_id, manager_id, created_at').order('name'),
-        supabase.from('employees').select('id', { count: 'exact', head: true }),
-        supabase.from('leaves').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('leaves')
-          .select('id, leave_type, start_date, employees(full_name)')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(3),
-      ])
-      if (profileResult.error) throw profileResult.error
-      if (departmentsResult.error) throw departmentsResult.error
-
-      setUserRole(profileResult.data.role)
-      setEmployees(employeeRows)
-      setDepartments(departmentsResult.data ?? [])
-      setEmployeeCount(employeeCountResult.count ?? employeeRows.length)
+      const dashboard = result.data
+      setUserRole(dashboard.userRole)
+      setEmployees(dashboard.employees)
+      setDepartments(dashboard.departments)
+      setEmployeeCount(dashboard.employeeCount)
 
       const counts = new Map<string, number>([
         ['الإدارة الرئيسيه / طرابلس', 0],
@@ -117,21 +67,15 @@ export default function EmployeesPage() {
         ['براك الشاطئ', 0],
         ['حوض مرزق', 0],
       ])
-      for (const employee of employeeRows) {
+      for (const employee of dashboard.employees) {
         const branch = employee.branch?.trim() || 'غير محدد'
         counts.set(branch, (counts.get(branch) ?? 0) + 1)
       }
       setBranchCounts([...counts].map(([branch, count]) => ({ branch, count })))
-
-      const leavesError = pendingCountResult.error || pendingLeavesResult.error
-      if (leavesError) {
-        setDashboardError(`تعذر تحميل مؤشرات الإجازات: ${leavesError.message}`)
-      } else {
-        setPendingLeaveCount(pendingCountResult.count ?? 0)
-        setPendingLeaves(pendingLeavesResult.data ?? [])
-      }
+      setPendingLeaveCount(dashboard.pendingLeaveCount)
+      setPendingLeaves(dashboard.pendingLeaves)
     } catch (error) {
-      console.error('Failed to load employee dashboard:', error)
+      console.error('Fetch Error:', error)
       setEmployees([])
       setDepartments([])
       setEmployeeCount(0)
@@ -142,7 +86,7 @@ export default function EmployeesPage() {
     } finally {
       setLoading(false)
     }
-  }, [router, supabase])
+  }, [])
 
   useEffect(() => { void Promise.resolve().then(fetchEmployees) }, [fetchEmployees])
 

@@ -85,11 +85,31 @@ export interface AdminDatabase {
           full_name: string
           employee_number: string | null
           national_id: string | null
+          work_start_date: string | null
+          birth_date: string | null
+          social_status: string | null
+          qualification: string | null
+          major: string | null
+          university: string | null
+          hire_date: string | null
           job_title: string | null
           department: string | null
+          grade: string | null
+          basic_salary: number | null
+          variable_salary: number | null
+          phone: string | null
+          address: string | null
+          employment_status: string | null
+          delegation_entity: string | null
+          branch: string | null
+          job_type: string | null
+          notes: string | null
+          photo_url: string | null
+          delegation_start_date: string | null
           leave_balance: number | null
           department_id: string | null
           direct_manager_id: string | null
+          created_at: string
         }
         Insert: {
           id?: string
