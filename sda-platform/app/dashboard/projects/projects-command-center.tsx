@@ -75,6 +75,13 @@ const emptyStats: ProjectStats = {
   agriculturalArea: 0,
   stoppedProjects: 0,
   totalBudget: 0,
+  inProgressProjects: 0,
+  overdueProjects: 0,
+  completedProjects: 0,
+  overallCompletionPercentage: 0,
+  agriculturalLandCount: 0,
+  investmentOpportunitiesCount: 0,
+  geographicDistribution: 0,
   projectsByStatus: projectStatuses.map((status) => ({ status, count: 0 })),
   budgetBySector: projectSectors.map((sector) => ({ sector, budget: 0 })),
   municipalitiesRanked: [],
@@ -95,6 +102,9 @@ const initialForm: ProjectInput = {
   required_intervention: '',
   description: '',
   completion_percentage: 0,
+  start_date: '',
+  end_date: '',
+  contractor_name: '',
 }
 
 const formatNumber = (value: number, maximumFractionDigits = 0) =>
@@ -123,7 +133,7 @@ function KpiCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-400">{label}</p>
-          <p className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl">{value}</p>
+          <p className={`mt-4 font-black tracking-tight text-white ${value.length > 12 ? 'text-sm leading-6 sm:text-base' : 'text-3xl sm:text-4xl'}`}>{value}</p>
           <p className="mt-2 text-xs text-slate-500">{unit}</p>
         </div>
         <span className="rounded-xl border border-white/10 bg-white/5 p-3">
@@ -333,11 +343,16 @@ export default function ProjectsCommandCenter({
           </p>
         )}
 
-        <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="إجمالي المشاريع الموثقة" value={formatNumber(stats.totalProjects)} unit="مشروع ضمن المحفظة الوطنية" icon={Building2} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
-          <KpiCard label="المساحات الزراعية الموثقة" value={formatNumber(stats.agriculturalArea, 2)} unit="هكتار" icon={Sprout} accent="bg-lime-400" gradient="from-lime-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
-          <KpiCard label="المشاريع المتوقفة الموثقة" value={formatNumber(stats.stoppedProjects)} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
-          <KpiCard label="ميزانيات المشاريع الموثقة" value={formatNumber(stats.totalBudget)} unit="دينار ليبي" icon={Banknote} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
+        <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <KpiCard label="المشاريع قيد التنفيذ" value={stats.inProgressProjects ? formatNumber(stats.inProgressProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع" icon={Activity} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
+          <KpiCard label="المشاريع المتأخرة" value={stats.overdueProjects ? formatNumber(stats.overdueProjects) : 'لم يتم إدخال بيانات بعد'} unit="تجاوزت تاريخ الانتهاء المخطط" icon={Clock3} accent="bg-orange-400" gradient="from-orange-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
+          <KpiCard label="المشاريع المتوقفة" value={stats.stoppedProjects ? formatNumber(stats.stoppedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
+          <KpiCard label="المشاريع المنجزة" value={stats.completedProjects ? formatNumber(stats.completedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع مكتمل" icon={Check} accent="bg-emerald-400" gradient="from-emerald-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
+          <KpiCard label="إجمالي الميزانيات التقديرية" value={stats.totalBudget ? formatNumber(stats.totalBudget) : 'لم يتم إدخال بيانات بعد'} unit="دينار ليبي" icon={Banknote} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900 to-slate-900" note="للمشاريع الموثقة" />
+          <KpiCard label="نسبة الإنجاز العام" value={stats.overallCompletionPercentage ? `${formatNumber(stats.overallCompletionPercentage, 1)}٪` : 'لم يتم إدخال بيانات بعد'} unit="متوسط إنجاز المحفظة" icon={Activity} accent="bg-violet-400" gradient="from-violet-500/20 via-slate-900 to-slate-900" note="للمشاريع الموثقة" />
+          <KpiCard label="الأراضي الزراعية" value={stats.agriculturalLandCount ? formatNumber(stats.agriculturalLandCount) : 'لم يتم إدخال بيانات بعد'} unit="قطعة مسجلة" icon={Sprout} accent="bg-lime-400" gradient="from-lime-500/20 via-slate-900 to-slate-900" note="من قاعدة الأراضي" />
+          <KpiCard label="الفرص الاستثمارية" value={stats.investmentOpportunitiesCount ? formatNumber(stats.investmentOpportunitiesCount) : 'لم يتم إدخال بيانات بعد'} unit="فرصة متاحة" icon={Building2} accent="bg-amber-400" gradient="from-amber-500/20 via-slate-900 to-slate-900" note="فرص مفتوحة للاستثمار" />
+          <KpiCard label="التوزيع الجغرافي" value={stats.geographicDistribution ? formatNumber(stats.geographicDistribution) : 'لم يتم إدخال بيانات بعد'} unit="بلدية ضمن المحفظة" icon={MapPinned} accent="bg-cyan-400" gradient="from-cyan-500/20 via-slate-900 to-slate-900" note="بلديات بها مشاريع موثقة" />
         </section>
 
         <section aria-label="التحليل التنفيذي للمحفظة" className="mb-6 grid gap-5 xl:grid-cols-2">
@@ -667,6 +682,12 @@ export default function ProjectsCommandCenter({
                   <div className="grid gap-4 sm:grid-cols-2">
                     {formField('الميزانية التقديرية (دينار ليبي)', 'estimated_budget', undefined, 'number')}
                     {formField('مصدر التمويل', 'funding_source', ['خزانة الدولة', 'استثمار أجنبي', 'شراكة', 'مصادر أخرى'], 'text', true)}
+                    {formField('تاريخ بداية المشروع', 'start_date', undefined, 'date')}
+                    {formField('تاريخ الانتهاء المخطط', 'end_date', undefined, 'date')}
+                    <label className="block text-sm font-medium text-slate-300 sm:col-span-2">
+                      اسم المقاول
+                      <input maxLength={200} value={form.contractor_name} onChange={(event) => setForm({ ...form, contractor_name: event.target.value })} className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300" />
+                    </label>
                     <div className="rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-7 text-slate-300 sm:col-span-2">
                       <Banknote className="mb-2 text-amber-300" size={20} aria-hidden="true" />
                       أدخل القيمة التقديرية بالدينار الليبي. ستُحتسب ضمن المؤشر الإجمالي للمحفظة فور تسجيل المشروع.

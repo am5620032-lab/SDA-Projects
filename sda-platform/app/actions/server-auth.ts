@@ -720,6 +720,9 @@ export interface AdminDatabase {
           verified_by: string | null
           verified_at: string | null
           completion_percentage: number
+          start_date: string | null
+          end_date: string | null
+          contractor_name: string | null
         }
         Insert: {
           id?: string
@@ -740,6 +743,9 @@ export interface AdminDatabase {
           verified_by?: string | null
           verified_at?: string | null
           completion_percentage?: number
+          start_date?: string | null
+          end_date?: string | null
+          contractor_name?: string | null
         }
         Update: {
           id?: string
@@ -760,6 +766,207 @@ export interface AdminDatabase {
           verified_by?: string | null
           verified_at?: string | null
           completion_percentage?: number
+          start_date?: string | null
+          end_date?: string | null
+          contractor_name?: string | null
+        }
+        Relationships: []
+      }
+      agricultural_lands: {
+        Row: {
+          id: string
+          land_name: string
+          area_size: number
+          municipality: string
+          soil_type: string | null
+          water_source: string | null
+          status: string
+          is_available_for_investment: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          land_name: string
+          area_size?: number
+          municipality: string
+          soil_type?: string | null
+          water_source?: string | null
+          status?: string
+          is_available_for_investment?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          land_name?: string
+          area_size?: number
+          municipality?: string
+          soil_type?: string | null
+          water_source?: string | null
+          status?: string
+          is_available_for_investment?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      mineral_resources: {
+        Row: {
+          id: string
+          resource_name: string
+          location: string
+          coordinates: string | null
+          area_size: number
+          exploration_status: string
+          classification: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          resource_name: string
+          location: string
+          coordinates?: string | null
+          area_size?: number
+          exploration_status?: string
+          classification?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          resource_name?: string
+          location?: string
+          coordinates?: string | null
+          area_size?: number
+          exploration_status?: string
+          classification?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      investment_opportunities: {
+        Row: {
+          id: string
+          title: string
+          sector: string
+          description: string
+          estimated_cost: number
+          target_investor: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          sector: string
+          description?: string
+          estimated_cost?: number
+          target_investor?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          sector?: string
+          description?: string
+          estimated_cost?: number
+          target_investor?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      project_tracking: {
+        Row: {
+          id: string
+          project_id: string
+          update_date: string
+          completion_percentage: number
+          contractor_name: string | null
+          delay_reasons: string | null
+          field_photos_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          update_date?: string
+          completion_percentage: number
+          contractor_name?: string | null
+          delay_reasons?: string | null
+          field_photos_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          update_date?: string
+          completion_percentage?: number
+          contractor_name?: string | null
+          delay_reasons?: string | null
+          field_photos_url?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      project_financials: {
+        Row: {
+          id: string
+          project_id: string
+          approved_budget: number
+          contract_value: number
+          amount_spent: number
+          financial_obligations: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          approved_budget?: number
+          contract_value?: number
+          amount_spent?: number
+          financial_obligations?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          approved_budget?: number
+          contract_value?: number
+          amount_spent?: number
+          financial_obligations?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      investment_applications: {
+        Row: {
+          id: string
+          opportunity_id: string
+          applicant_id: string | null
+          applicant_name: string
+          applicant_email: string
+          note: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          opportunity_id: string
+          applicant_id?: string | null
+          applicant_name: string
+          applicant_email: string
+          note?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          opportunity_id?: string
+          applicant_id?: string | null
+          applicant_name?: string
+          applicant_email?: string
+          note?: string | null
+          status?: string
+          created_at?: string
         }
         Relationships: []
       }
