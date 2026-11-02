@@ -127,8 +127,27 @@ export interface AdminDatabase {
           full_name?: string
           employee_number?: string | null
           national_id?: string | null
+          work_start_date?: string | null
+          birth_date?: string | null
+          social_status?: string | null
+          qualification?: string | null
+          major?: string | null
+          university?: string | null
+          hire_date?: string | null
           job_title?: string | null
           department?: string | null
+          grade?: string | null
+          basic_salary?: number | null
+          variable_salary?: number | null
+          phone?: string | null
+          address?: string | null
+          employment_status?: string | null
+          delegation_entity?: string | null
+          branch?: string | null
+          job_type?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          delegation_start_date?: string | null
           leave_balance?: number | null
           department_id?: string | null
           direct_manager_id?: string | null
@@ -200,6 +219,111 @@ export interface AdminDatabase {
           end_date?: string
           days_count?: number
           notes?: string | null
+          status?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      attendance: {
+        Row: {
+          id: string
+          employee_id: string
+          check_in: string
+          check_out: string | null
+          status: string | null
+          late_minutes: number | null
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          check_in: string
+          check_out?: string | null
+          status?: string | null
+          late_minutes?: number | null
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          check_in?: string
+          check_out?: string | null
+          status?: string | null
+          late_minutes?: number | null
+        }
+        Relationships: []
+      }
+      hr_decisions: {
+        Row: {
+          id: string
+          employee_id: string
+          decision_type: string
+          decision_number: string
+          decision_date: string
+          details: string
+          old_value: string | null
+          new_value: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          decision_type: string
+          decision_number: string
+          decision_date: string
+          details: string
+          old_value?: string | null
+          new_value?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          decision_type?: string
+          decision_number?: string
+          decision_date?: string
+          details?: string
+          old_value?: string | null
+          new_value?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      leave_types: {
+        Row: { id: string; name: string; max_days_per_year: number }
+        Insert: { id?: string; name: string; max_days_per_year: number }
+        Update: { id?: string; name?: string; max_days_per_year?: number }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          id: string
+          employee_id: string
+          date: string
+          duration_hours: number
+          reason: string
+          status: string
+          manager_id: string | null
+          manager_notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          date: string
+          duration_hours: number
+          reason: string
+          status?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          date?: string
+          duration_hours?: number
+          reason?: string
           status?: string
           manager_id?: string | null
           manager_notes?: string | null

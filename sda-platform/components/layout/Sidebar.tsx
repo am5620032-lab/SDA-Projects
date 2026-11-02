@@ -5,6 +5,7 @@ import {
   CalendarCheck2,
   CalendarDays,
   ChevronDown,
+  FileText,
   LayoutDashboard,
   KeyRound,
   LogOut,
@@ -106,6 +107,8 @@ export default function Sidebar({
             <NavigationLink href="/dashboard/employees/attendance" onClick={closeMobileMenu}><CalendarCheck2 size={16} aria-hidden="true" />الحضور والانصراف</NavigationLink>
             <NavigationLink href="/dashboard/leaves" onClick={closeMobileMenu}><CalendarDays size={16} aria-hidden="true" />الإجازات</NavigationLink>
             <NavigationLink href="/dashboard/employees/promotions" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />الترقيات والعلاوات</NavigationLink>
+            <NavigationLink href="/dashboard/employees/decisions" onClick={closeMobileMenu}><FileText size={16} aria-hidden="true" />القرارات الإدارية</NavigationLink>
+            <NavigationLink href="/dashboard/employees/reports" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />التقارير والتصدير</NavigationLink>
             <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
             <NavigationLink href="/dashboard/employees/custody" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
           </nav>

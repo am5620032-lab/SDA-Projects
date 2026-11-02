@@ -76,7 +76,9 @@ export async function middleware(request: NextRequest) {
   if (!hasPlatformSession && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
-  return NextResponse.next()
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-app-pathname', pathname)
+  return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 export const config = {

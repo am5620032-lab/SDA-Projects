@@ -166,6 +166,13 @@ export default function EmployeesPage() {
         setEmployees((current) => current.map((employee) =>
           employee.id === editingId ? { ...employee, photo_url: null } : employee
         ))
+        try {
+          const auditResult = await logAction('update', `حذف الصورة الشخصية للموظف: ${employees.find((employee) => employee.id === editingId)?.full_name ?? editingId}`)
+          if ('error' in auditResult) alert(`تم حذف الصورة، لكن تعذر تسجيل الحركة: ${auditResult.error}`)
+        } catch (auditError) {
+          console.error('Failed to audit employee photo deletion:', auditError)
+          alert('تم حذف الصورة، لكن تعذر تسجيل الحركة في سجل المراقبة.')
+        }
       }
 
       const { error: removeError } = await supabase.storage.from('avatars').remove([filePath])

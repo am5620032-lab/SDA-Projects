@@ -1,69 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
-
-interface Employee {
-  id: string
-  full_name: string
-}
-
-interface AttendanceRecord {
-  id: string
-  employee_id: string
-  check_in: string
-  check_out: string | null
-  status: string | null
-  employees: { full_name: string } | { full_name: string }[] | null
-}
-
-function getTripoliDayRange() {
-  const timeZone = 'Africa/Tripoli'
-  const dateParts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const datePart = (type: string) => dateParts.find((part) => part.type === type)?.value
-  const today = `${datePart('year')}-${datePart('month')}-${datePart('day')}`
-  const midnightUtc = (date: string) => {
-    const utcGuess = new Date(`${date}T00:00:00Z`)
-    const localParts = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(utcGuess)
-    const value = (type: string) => Number(localParts.find((part) => part.type === type)?.value)
-    const localAsUtc = Date.UTC(
-      value('year'),
-      value('month') - 1,
-      value('day'),
-      value('hour'),
-      value('minute'),
-      value('second'),
-    )
-    return new Date(utcGuess.getTime() - (localAsUtc - utcGuess.getTime()))
-  }
-  const nextDay = new Date(`${today}T00:00:00Z`)
-  nextDay.setUTCDate(nextDay.getUTCDate() + 1)
-  const nextDate = nextDay.toISOString().slice(0, 10)
-
-  return {
-    start: midnightUtc(today).toISOString(),
-    end: midnightUtc(nextDate).toISOString(),
-  }
-}
+import {
+  getAttendanceDashboardData,
+  recordAttendance,
+  recordAttendanceCheckout,
+  type AttendanceEmployee,
+  type AttendanceRecord,
+} from './actions'
 
 function getEmployeeName(record: AttendanceRecord) {
-  return (Array.isArray(record.employees) ? record.employees[0] : record.employees)?.full_name || 'غير محدد'
+  return record.employees?.full_name || 'غير محدد'
 }
 
 function formatTime(value: string | null) {
@@ -86,7 +34,7 @@ function formatDate(value: string) {
 }
 
 export default function EmployeeAttendancePage() {
-  const [employee, setEmployee] = useState<Employee | null>(null)
+  const [employee, setEmployee] = useState<AttendanceEmployee | null>(null)
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null)
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,78 +42,24 @@ export default function EmployeeAttendancePage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
-
   const fetchData = useCallback(async () => {
     setLoading(true)
     setErrorMessage('')
 
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError) throw authError
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      if (!user.email) throw new Error('لا يوجد بريد إلكتروني مرتبط بحساب المستخدم.')
-
-      const { data: employeeData, error: employeeError } = await supabase
-        .from('employees')
-        .select('id, full_name')
-        .eq('email', user.email)
-        .maybeSingle()
-      if (employeeError) throw employeeError
-      if (!employeeData) {
-        setEmployee(null)
-        setTodayRecord(null)
-        setAttendance([])
-        throw new Error(`لا يوجد موظف مرتبط بالبريد الإلكتروني ${user.email}.`)
-      }
-
-      setEmployee(employeeData)
-      const { start, end } = getTripoliDayRange()
-      const [todayResult, firstPage] = await Promise.all([
-        supabase
-          .from('attendance')
-          .select('id, employee_id, check_in, check_out, status, employees(full_name)')
-          .eq('employee_id', employeeData.id)
-          .gte('check_in', start)
-          .lt('check_in', end)
-          .order('check_in', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('attendance')
-          .select('id, employee_id, check_in, check_out, status, employees(full_name)')
-          .order('check_in', { ascending: false })
-          .range(0, 999),
-      ])
-      if (todayResult.error) throw todayResult.error
-      if (firstPage.error) throw firstPage.error
-
-      const allRecords: AttendanceRecord[] = firstPage.data ?? []
-      for (let startIndex = 1000; allRecords.length >= startIndex; startIndex += 1000) {
-        const { data, error } = await supabase
-          .from('attendance')
-          .select('id, employee_id, check_in, check_out, status, employees(full_name)')
-          .order('check_in', { ascending: false })
-          .range(startIndex, startIndex + 999)
-        if (error) throw error
-        allRecords.push(...(data ?? []))
-        if (!data || data.length < 1000) break
-      }
-
-      const record: AttendanceRecord | null = todayResult.data
-      setTodayRecord(record)
-      setAttendance(allRecords)
+      const result = await getAttendanceDashboardData()
+      if ('error' in result) throw new Error(result.error)
+      setEmployee(result.data.employee)
+      setTodayRecord(result.data.todayRecord)
+      setAttendance(result.data.attendance)
+      const record = result.data.todayRecord
       setSuccessMessage(record ? 'لقد سجلت حضورك اليوم بالفعل' : '')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'تعذر تحميل بيانات الحضور.')
     } finally {
       setLoading(false)
     }
-  }, [router, supabase])
+  }, [])
 
   useEffect(() => {
     void Promise.resolve().then(fetchData)
@@ -178,29 +72,8 @@ export default function EmployeeAttendancePage() {
     setSuccessMessage('')
 
     try {
-      const { start, end } = getTripoliDayRange()
-      const { data: existingRecord, error: lookupError } = await supabase
-        .from('attendance')
-        .select('id')
-        .eq('employee_id', employee.id)
-        .gte('check_in', start)
-        .lt('check_in', end)
-        .limit(1)
-        .maybeSingle()
-      if (lookupError) throw lookupError
-      if (existingRecord) {
-        setSuccessMessage('لقد سجلت حضورك اليوم بالفعل')
-        await fetchData()
-        return
-      }
-
-      const { error } = await supabase.from('attendance').insert({
-        employee_id: employee.id,
-        check_in: new Date().toISOString(),
-        status: 'present',
-      })
-      if (error) throw error
-
+      const result = await recordAttendance()
+      if ('error' in result) throw new Error(result.error)
       await fetchData()
       setSuccessMessage('تم تسجيل الحضور بنجاح.')
     } catch (error) {
@@ -217,16 +90,8 @@ export default function EmployeeAttendancePage() {
     setSuccessMessage('')
 
     try {
-      const { data, error } = await supabase
-        .from('attendance')
-        .update({ check_out: new Date().toISOString() })
-        .eq('id', todayRecord.id)
-        .is('check_out', null)
-        .select('id')
-        .maybeSingle()
-      if (error) throw error
-      if (!data) throw new Error('تم تسجيل الانصراف مسبقًا. حدّث الصفحة للتحقق من الحالة.')
-
+      const result = await recordAttendanceCheckout(todayRecord.id)
+      if ('error' in result) throw new Error(result.error)
       await fetchData()
       setSuccessMessage('تم تسجيل الانصراف بنجاح.')
     } catch (error) {
@@ -272,7 +137,7 @@ export default function EmployeeAttendancePage() {
               </button>
             )}
           </div>
-          {todayRecord && <p className="mt-4 text-sm text-gray-600">الحضور: {formatTime(todayRecord.check_in)}{todayRecord.check_out ? ` — الانصراف: ${formatTime(todayRecord.check_out)}` : ''}</p>}
+          {todayRecord && <p className="mt-4 text-sm text-gray-600">الحضور: {formatTime(todayRecord.check_in)}{todayRecord.check_out ? ` — الانصراف: ${formatTime(todayRecord.check_out)}` : ''} — التأخير: {todayRecord.late_minutes} دقيقة</p>}
         </section>
 
         {successMessage && <p role="status" className="mb-4 rounded-lg bg-green-50 p-4 text-sm font-semibold text-green-700">{successMessage}</p>}
@@ -293,6 +158,7 @@ export default function EmployeeAttendancePage() {
                     <th className="p-3">التاريخ</th>
                     <th className="p-3">وقت الحضور</th>
                     <th className="p-3">وقت الانصراف</th>
+                    <th className="p-3">دقائق التأخير</th>
                     <th className="p-3">الحالة</th>
                   </tr>
                 </thead>
@@ -303,6 +169,7 @@ export default function EmployeeAttendancePage() {
                       <td className="p-3">{formatDate(record.check_in)}</td>
                       <td className="p-3">{formatTime(record.check_in)}</td>
                       <td className="p-3">{formatTime(record.check_out)}</td>
+                      <td className="p-3">{record.late_minutes} دقيقة</td>
                       <td className="p-3">
                         <span className={`rounded-full px-3 py-1 text-xs font-bold ${record.check_out ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
                           {record.status === 'absent' ? 'غائب' : record.check_out ? 'انصرف' : 'حاضر'}
