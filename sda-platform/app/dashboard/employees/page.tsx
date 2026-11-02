@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
+import { Printer, X } from 'lucide-react'
 import { logAction } from '@/app/actions/log-action'
 import { getEmployeesDashboardData } from '@/app/dashboard/employees/actions'
 import type {
@@ -711,8 +712,18 @@ export default function EmployeesPage() {
               <div className="flex justify-between items-center mb-6 print:hidden border-b pb-4">
                 <h2 className="text-2xl font-bold text-[#157A3F]">الملف الشامل: {selectedEmp.full_name}</h2>
                 <div className="flex gap-2">
-                  <button onClick={() => window.print()} className="bg-[#157A3F] hover:bg-green-800 text-white px-4 py-2 rounded-lg font-bold shadow-md transition">طباعة الملف الشامل</button>
-                  <button onClick={() => setIsViewModalOpen(false)} className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold transition">إغلاق</button>
+                  <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-[#157A3F] px-4 py-2 font-bold text-white shadow-md transition hover:bg-green-800">
+                    <Printer size={18} aria-hidden="true" />
+                    طباعة الملف
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsViewModalOpen(false); setSelectedEmp(null) }}
+                    className="inline-flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 font-bold text-red-600 transition hover:bg-red-100"
+                  >
+                    <X size={18} aria-hidden="true" />
+                    إغلاق
+                  </button>
                 </div>
               </div>
 

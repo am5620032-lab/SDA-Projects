@@ -13,20 +13,30 @@ export async function logAction(
     return { error: 'تفاصيل الحركة غير صالحة.' }
   }
 
-  const actorResult = await getAuthenticatedActor()
-  if ('error' in actorResult) return actorResult
+  try {
+    const actorResult = await getAuthenticatedActor()
+    if ('error' in actorResult) return actorResult
 
-  const adminResult = createSupabaseAdminClient()
-  if ('error' in adminResult) return adminResult
+    const adminResult = createSupabaseAdminClient()
+    if ('error' in adminResult) return adminResult
 
-  const { error } = await adminResult.client.from('audit_logs').insert({
-    actor_id: actorResult.actor.id,
-    actor_name: actorResult.actor.fullName || null,
-    actor_email: actorResult.actor.email,
-    action,
-    details: details.trim(),
-  })
-  if (error) return { error: `تعذر تسجيل الحركة: ${error.message}` }
+    const { error } = await adminResult.client.from('audit_logs').insert({
+      actor_id: actorResult.actor.id || null,
+      actor_name: actorResult.actor.fullName || null,
+      actor_email: actorResult.actor.email,
+      action,
+      details: details.trim(),
+    })
+    if (error) {
+      console.error('Audit log insert failed:', error)
+      return { error: `تعذر تسجيل الحركة: ${error.message}` }
+    }
 
-  return { success: true }
+    return { success: true }
+  } catch (error) {
+    console.error('Audit log failed:', error)
+    return {
+      error: `تعذر تسجيل الحركة: ${error instanceof Error ? error.message : 'خطأ غير معروف.'}`,
+    }
+  }
 }

@@ -45,6 +45,11 @@
     box-shadow: none !important;
   }
 
+  .employee-file-print-sheet .print-hidden,
+  .employee-file-print-sheet button {
+    display: none !important;
+  }
+
   body.printing-employee-card * {
     visibility: hidden !important;
   }
