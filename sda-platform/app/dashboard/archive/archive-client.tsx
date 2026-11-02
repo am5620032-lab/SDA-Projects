@@ -91,6 +91,8 @@ export default function ArchiveClient({
   const [classification, setClassification] = useState('')
   const [date, setDate] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [isExternalSource, setIsExternalSource] = useState(false)
+  const [isExternalDestination, setIsExternalDestination] = useState(false)
   const [previewDocument, setPreviewDocument] = useState<ArchiveDocument | null>(null)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -131,6 +133,8 @@ export default function ArchiveClient({
       const employeeId = form.querySelector<HTMLSelectElement>('select[name="employee_id"]')?.value
       const sourceEntity = form.querySelector<HTMLSelectElement>('select[name="source_entity"]')?.value
       const destinationEntity = form.querySelector<HTMLSelectElement>('select[name="destination_entity"]')?.value
+      const externalSourceName = form.querySelector<HTMLInputElement>('input[name="external_source_name"]')?.value.trim()
+      const externalDestinationName = form.querySelector<HTMLInputElement>('input[name="external_destination_name"]')?.value.trim()
       const externalReference = form.querySelector<HTMLInputElement>('input[name="external_reference"]')?.value.trim()
       const documentDate = form.querySelector<HTMLInputElement>('input[name="document_date"]')?.value
       if (!files.length || !documentType || !classificationValue) {
@@ -145,6 +149,8 @@ export default function ArchiveClient({
       request.set('classification', classificationValue)
       request.set('source_entity', sourceEntity)
       request.set('destination_entity', destinationEntity)
+      request.set('external_source_name', externalSourceName ?? '')
+      request.set('external_destination_name', externalDestinationName ?? '')
       request.set('external_reference', externalReference ?? '')
       request.set('document_date', documentDate ?? '')
       if (employeeId) request.set('employee_id', employeeId)
@@ -317,7 +323,7 @@ export default function ArchiveClient({
                 <Search size={17} aria-hidden="true" />بحث
               </button>
               <button type="button" onClick={() => { setQuery(''); setType(''); setClassification(''); setDate(''); void refresh({ query: '', type: '', classification: '', date: '' }) }} className="rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-700">مسح الفلاتر</button>
-              <button type="button" onClick={() => { setError(''); setNotice(''); setModalOpen(true) }} className="mr-auto inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 font-bold text-white hover:bg-amber-700">
+              <button type="button" onClick={() => { setError(''); setNotice(''); setIsExternalSource(false); setIsExternalDestination(false); setModalOpen(true) }} className="mr-auto inline-flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 font-bold text-white hover:bg-amber-700">
                 <FileUp size={18} aria-hidden="true" />رفع مستند جديد
               </button>
             </div>
@@ -413,28 +419,66 @@ export default function ArchiveClient({
                       {classifications.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   </label>
-                  <label className="block text-sm font-semibold">الإدارة/المكتب المصدر
-                    <select name="source_entity" required defaultValue="" className="mt-1 w-full rounded-lg border px-3 py-2.5">
-                      <option value="" disabled>اختر الإدارة أو المكتب المصدر</option>
-                      <option value="جهة خارجية">جهة خارجية</option>
-                      {departments.map((department) => (
-                        <option key={department.id} value={department.name}>
-                          {department.name} - {department.type}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block text-sm font-semibold">الإدارة/المكتب الموجه إليه
-                    <select name="destination_entity" required defaultValue="" className="mt-1 w-full rounded-lg border px-3 py-2.5">
-                      <option value="" disabled>اختر الإدارة أو المكتب الموجه إليه</option>
-                      <option value="جهة خارجية">جهة خارجية</option>
-                      {departments.map((department) => (
-                        <option key={department.id} value={department.name}>
-                          {department.name} - {department.type}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div>
+                    <label className="block text-sm font-semibold">الإدارة/المكتب المصدر
+                      <select
+                        name="source_entity"
+                        required
+                        defaultValue=""
+                        onChange={(event) => setIsExternalSource(event.target.value === 'جهة خارجية')}
+                        className="mt-1 w-full rounded-lg border px-3 py-2.5"
+                      >
+                        <option value="" disabled>اختر الإدارة أو المكتب المصدر</option>
+                        <option value="جهة خارجية">جهة خارجية</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.name}>
+                            {department.name} - {department.type}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {isExternalSource && (
+                      <input
+                        name="external_source_name"
+                        type="text"
+                        required
+                        maxLength={255}
+                        placeholder="اكتب اسم الجهة الخارجية المصدرة..."
+                        aria-label="اسم الجهة الخارجية المصدرة"
+                        className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold">الإدارة/المكتب الموجه إليه
+                      <select
+                        name="destination_entity"
+                        required
+                        defaultValue=""
+                        onChange={(event) => setIsExternalDestination(event.target.value === 'جهة خارجية')}
+                        className="mt-1 w-full rounded-lg border px-3 py-2.5"
+                      >
+                        <option value="" disabled>اختر الإدارة أو المكتب الموجه إليه</option>
+                        <option value="جهة خارجية">جهة خارجية</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.name}>
+                            {department.name} - {department.type}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {isExternalDestination && (
+                      <input
+                        name="external_destination_name"
+                        type="text"
+                        required
+                        maxLength={255}
+                        placeholder="اكتب اسم الجهة الخارجية الموجه إليها..."
+                        aria-label="اسم الجهة الخارجية الموجه إليها"
+                        className="mt-2 w-full rounded-lg border px-3 py-2.5"
+                      />
+                    )}
+                  </div>
                   <label className="block text-sm font-semibold">رقم الصادر/الوارد الخارجي (اختياري)
                     <input name="external_reference" type="text" maxLength={100} className="mt-1 w-full rounded-lg border px-3 py-2.5" />
                   </label>

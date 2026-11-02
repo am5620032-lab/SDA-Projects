@@ -178,6 +178,8 @@ export async function uploadArchiveDocument(formData: FormData): Promise<{
   const manifestValue = formData.get('file_manifest')
   const sourceEntityValue = formData.get('source_entity')
   const destinationEntityValue = formData.get('destination_entity')
+  const externalSourceNameValue = formData.get('external_source_name')
+  const externalDestinationNameValue = formData.get('external_destination_name')
   const externalReferenceValue = formData.get('external_reference')
   const documentDateValue = formData.get('document_date')
   if (
@@ -188,12 +190,28 @@ export async function uploadArchiveDocument(formData: FormData): Promise<{
     || (employeeValue !== null && typeof employeeValue !== 'string')
     || typeof sourceEntityValue !== 'string'
     || typeof destinationEntityValue !== 'string'
+    || (externalSourceNameValue !== null && typeof externalSourceNameValue !== 'string')
+    || (externalDestinationNameValue !== null && typeof externalDestinationNameValue !== 'string')
     || (externalReferenceValue !== null && typeof externalReferenceValue !== 'string')
     || (documentDateValue !== null && typeof documentDateValue !== 'string')
     || typeof manifestValue !== 'string'
   ) return { error: 'يرجى اختيار نوع المستند وتصنيفه.' }
-  const sourceEntity = sourceEntityValue.trim()
-  const destinationEntity = destinationEntityValue.trim()
+  const sourceSelection = sourceEntityValue.trim()
+  const destinationSelection = destinationEntityValue.trim()
+  const externalSourceName = typeof externalSourceNameValue === 'string' ? externalSourceNameValue.trim() : ''
+  const externalDestinationName = typeof externalDestinationNameValue === 'string' ? externalDestinationNameValue.trim() : ''
+  if (sourceSelection === 'جهة خارجية' && !externalSourceName) {
+    return { error: 'يرجى كتابة اسم الجهة الخارجية المصدرة.' }
+  }
+  if (destinationSelection === 'جهة خارجية' && !externalDestinationName) {
+    return { error: 'يرجى كتابة اسم الجهة الخارجية الموجه إليها.' }
+  }
+  const sourceEntity = sourceSelection === 'جهة خارجية'
+    ? `جهة خارجية - ${externalSourceName}`
+    : sourceSelection
+  const destinationEntity = destinationSelection === 'جهة خارجية'
+    ? `جهة خارجية - ${externalDestinationName}`
+    : destinationSelection
   const externalReference = typeof externalReferenceValue === 'string'
     ? externalReferenceValue.trim() || null
     : null
@@ -207,8 +225,8 @@ export async function uploadArchiveDocument(formData: FormData): Promise<{
   if (departmentsError) return { error: `تعذر التحقق من الإدارة/المكتب: ${departmentsError.message}` }
   const departmentNames = new Set((departments ?? []).map((department) => department.name))
   if (
-    (sourceEntity !== 'جهة خارجية' && !departmentNames.has(sourceEntity))
-    || (destinationEntity !== 'جهة خارجية' && !departmentNames.has(destinationEntity))
+    (sourceSelection !== 'جهة خارجية' && !departmentNames.has(sourceSelection))
+    || (destinationSelection !== 'جهة خارجية' && !departmentNames.has(destinationSelection))
   ) {
     return { error: 'اختر المصدر والوجهة من الإدارات المسجلة أو «جهة خارجية».' }
   }
