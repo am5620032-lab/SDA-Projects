@@ -28,7 +28,9 @@ type ActionResult = { success: true } | { error: string }
 async function getAdminClient() {
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) return actorResult
-  if (actorResult.actor.role !== 'it_manager') return { error: 'هذه الصفحة مخصصة لمدير تقنية المعلومات.' }
+  if (!['it_manager', 'admin_manager'].includes(actorResult.actor.role)) {
+    return { error: 'ليس لديك صلاحية إدارة حسابات المنظومات.' }
+  }
 
   const adminResult = createSupabaseAdminClient()
   if ('error' in adminResult) return adminResult

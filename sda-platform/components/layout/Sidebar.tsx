@@ -52,6 +52,7 @@ export default function Sidebar() {
   const [userRole, setUserRole] = useState('')
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [employeesExpanded, setEmployeesExpanded] = useState(() => pathname.startsWith('/dashboard/employees'))
+  const canManageModules = userRole === 'it_manager' || userRole === 'admin_manager'
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -95,10 +96,16 @@ export default function Sidebar() {
             <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
             <NavigationLink href="/dashboard/employees/custody" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
             {userRole === 'it_manager' && <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}><UsersRound size={16} aria-hidden="true" />إدارة المستخدمين</NavigationLink>}
-            {userRole === 'it_manager' && <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}><KeyRound size={16} aria-hidden="true" />صلاحيات المنظومات</NavigationLink>}
           </nav>
         )}
       </section>
+
+      {canManageModules && (
+        <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}>
+          <KeyRound size={18} aria-hidden="true" />
+          إدارة صلاحيات المنظومات
+        </NavigationLink>
+      )}
 
       <form action={logoutFromPlatform} className="pt-2">
         <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50">

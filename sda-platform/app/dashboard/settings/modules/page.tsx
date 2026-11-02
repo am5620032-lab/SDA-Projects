@@ -6,7 +6,7 @@ import ModulesClient from './modules-client'
 export default async function ModuleSettingsPage() {
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) redirect('/login')
-  if (actorResult.actor.role !== 'it_manager') redirect('/dashboard')
+  if (!['it_manager', 'admin_manager'].includes(actorResult.actor.role)) redirect('/dashboard')
 
   const result = await getModuleAccessData()
   if ('error' in result) throw new Error(result.error)
