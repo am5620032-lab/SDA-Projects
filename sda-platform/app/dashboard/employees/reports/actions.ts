@@ -2,9 +2,50 @@
 
 import { getHrEmployeeId } from '@/app/actions/hr-session'
 import { createSupabaseAdminClient } from '@/app/actions/server-auth'
+import { getPromotionEligibilityDate } from '../promotion-eligibility'
 
 export type HrReportKind = 'employees' | 'attendance' | 'leaves'
 export type HrReportRow = Record<string, string | number | null>
+export interface PromotionEligibleEmployee {
+  id: string
+  full_name: string
+  job_title: string | null
+  hire_date: string | null
+  last_promotion_date: string | null
+  eligible_since: string
+}
+
+export async function getPromotionEligibleEmployees(): Promise<
+  { data: PromotionEligibleEmployee[] } | { error: string }
+> {
+  const employeeId = await getHrEmployeeId()
+  if (!employeeId) return { error: 'سجّل الدخول إلى منظومة شؤون الموظفين أولاً.' }
+  const adminResult = createSupabaseAdminClient()
+  if ('error' in adminResult) return adminResult
+
+  const { data, error } = await adminResult.client.from('employees')
+    .select('id, full_name, job_title, hire_date, last_promotion_date, employment_status')
+    .neq('employment_status', 'terminated')
+    .order('full_name')
+  if (error) return { error: `تعذر جلب قائمة المستحقين للترقية: ${error.message}` }
+
+  const today = new Date().toISOString().slice(0, 10)
+  const eligible = (data ?? []).flatMap((employee) => {
+    const eligibleSince = getPromotionEligibilityDate(employee.hire_date, employee.last_promotion_date, today)
+    if (!eligibleSince) return []
+
+    return [{
+      id: employee.id,
+      full_name: employee.full_name,
+      job_title: employee.job_title,
+      hire_date: employee.hire_date,
+      last_promotion_date: employee.last_promotion_date,
+      eligible_since: eligibleSince,
+    }]
+  })
+
+  return { data: eligible }
+}
 
 async function getAllPages<T>(load: (from: number, to: number) => PromiseLike<{
   data: T[] | null

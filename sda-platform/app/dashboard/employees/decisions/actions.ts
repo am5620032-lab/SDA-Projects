@@ -163,6 +163,7 @@ export async function createDecision(input: {
       break
     case 'promotion':
       employeeUpdate.grade = String(nextValue)
+      employeeUpdate.last_promotion_date = input.decisionDate
       break
     case 'job_title':
       employeeUpdate.job_title = String(nextValue)

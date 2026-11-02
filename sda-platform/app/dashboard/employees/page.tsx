@@ -17,6 +17,13 @@ export default function EmployeesPage() {
   const [userRole, setUserRole] = useState('')
   const [employeeCount, setEmployeeCount] = useState<number | null>(null)
   const [pendingLeaveCount, setPendingLeaveCount] = useState<number | null>(null)
+  const [onDutyCount, setOnDutyCount] = useState<number | null>(null)
+  const [onLeaveCount, setOnLeaveCount] = useState<number | null>(null)
+  const [delegatedCount, setDelegatedCount] = useState<number | null>(null)
+  const [unreturnedAssetsCount, setUnreturnedAssetsCount] = useState<number | null>(null)
+  const [promotionEligibleEmployees, setPromotionEligibleEmployees] = useState<
+    { id: string; full_name: string; eligible_since: string }[]
+  >([])
   const [branchCounts, setBranchCounts] = useState<{ branch: string; count: number }[]>([])
   const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>([])
   const [dashboardError, setDashboardError] = useState('')
@@ -36,12 +43,12 @@ export default function EmployeesPage() {
   const [activeTab, setActiveTab] = useState('basic')
 
   const [formData, setFormData] = useState({ 
-    full_name: '', national_id: '', employee_number: '', work_start_date: '', birth_date: '', social_status: '', 
+    full_name: '', national_id: '', employee_number: '', work_start_date: '', birth_date: '', birth_place: '', nationality: '', social_status: '', gender: '',
     qualification: '', major: '', university: '', hire_date: '', job_title: '', department: '', 
-    grade: '', basic_salary: '', variable_salary: '', phone: '', address: '', 
+    grade: '', category: '', rank: '', last_promotion_date: '', basic_salary: '', variable_salary: '', phone: '', email: '', address: '',
     employment_status: 'on_duty', delegation_entity: '', branch: 'الإدارة الرئيسيه / طرابلس',
     department_id: '', direct_manager_id: '',
-    job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: ''
+    job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: '', delegation_end_date: ''
   })
 
   const supabase = useMemo(() => createClient(), [])
@@ -57,6 +64,11 @@ export default function EmployeesPage() {
       setEmployees(dashboard.employees)
       setDepartments(dashboard.departments)
       setEmployeeCount(dashboard.employeeCount)
+      setOnDutyCount(dashboard.onDutyCount)
+      setOnLeaveCount(dashboard.onLeaveCount)
+      setDelegatedCount(dashboard.delegatedCount)
+      setUnreturnedAssetsCount(dashboard.unreturnedAssetsCount)
+      setPromotionEligibleEmployees(dashboard.promotionEligibleEmployees)
 
       const counts = new Map<string, number>([
         ['الإدارة الرئيسيه / طرابلس', 0],
@@ -79,6 +91,11 @@ export default function EmployeesPage() {
       setEmployees([])
       setDepartments([])
       setEmployeeCount(0)
+      setOnDutyCount(0)
+      setOnLeaveCount(0)
+      setDelegatedCount(0)
+      setUnreturnedAssetsCount(0)
+      setPromotionEligibleEmployees([])
       setPendingLeaveCount(0)
       setBranchCounts([])
       setPendingLeaves([])
@@ -195,10 +212,14 @@ export default function EmployeesPage() {
       basic_salary: parseFloat(formData.basic_salary) || 0, 
       variable_salary: parseFloat(formData.variable_salary) || 0,
       birth_date: formData.birth_date === '' ? null : formData.birth_date,
+      last_promotion_date: formData.last_promotion_date || null,
       hire_date: formData.hire_date === '' ? null : formData.hire_date,
       work_start_date: formData.work_start_date || null,
       delegation_start_date: ['delegated', 'seconded'].includes(formData.employment_status)
         ? formData.delegation_start_date || null
+        : null,
+      delegation_end_date: ['delegated', 'seconded'].includes(formData.employment_status)
+        ? formData.delegation_end_date || null
         : null,
       department_id: formData.department_id || null,
       direct_manager_id: formData.direct_manager_id || null,
@@ -393,15 +414,38 @@ export default function EmployeesPage() {
   const openEdit = (emp: Employee) => {
     setEditingId(emp.id)
     setFormData({ 
-      ...emp, 
+      full_name: emp.full_name,
+      national_id: emp.national_id,
+      employee_number: emp.employee_number,
+      work_start_date: emp.work_start_date || '',
+      birth_date: emp.birth_date,
+      birth_place: emp.birth_place,
+      nationality: emp.nationality,
+      social_status: emp.social_status,
+      gender: emp.gender,
+      qualification: emp.qualification,
+      major: emp.major,
+      university: emp.university,
+      hire_date: emp.hire_date,
+      job_title: emp.job_title,
+      department: emp.department,
+      grade: emp.grade,
+      category: emp.category,
+      rank: emp.rank,
+      last_promotion_date: emp.last_promotion_date || '',
       basic_salary: String(emp.basic_salary || 0), 
       variable_salary: String(emp.variable_salary || 0),
+      phone: emp.phone,
+      email: emp.email,
+      address: emp.address,
+      employment_status: emp.employment_status,
+      delegation_entity: emp.delegation_entity,
       branch: emp.branch || 'الإدارة الرئيسيه / طرابلس',
       job_type: emp.job_type || 'دائم',
       notes: emp.notes || '',
       photo_url: emp.photo_url || '',
       delegation_start_date: emp.delegation_start_date || '',
-      work_start_date: emp.work_start_date || '',
+      delegation_end_date: emp.delegation_end_date || '',
       department_id: emp.department_id || '',
       direct_manager_id: emp.direct_manager_id || '',
     })
@@ -423,12 +467,12 @@ export default function EmployeesPage() {
   const openAdd = () => {
     setEditingId(null)
     setFormData({ 
-      full_name: '', national_id: '', employee_number: '', work_start_date: '', birth_date: '', social_status: '', 
+      full_name: '', national_id: '', employee_number: '', work_start_date: '', birth_date: '', birth_place: '', nationality: '', social_status: '', gender: '',
       qualification: '', major: '', university: '', hire_date: '', job_title: '', department: '', 
-      grade: '', basic_salary: '', variable_salary: '', phone: '', address: '', 
+      grade: '', category: '', rank: '', last_promotion_date: '', basic_salary: '', variable_salary: '', phone: '', email: '', address: '',
       employment_status: 'on_duty', delegation_entity: '', branch: 'الإدارة الرئيسيه / طرابلس',
       department_id: '', direct_manager_id: '',
-      job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: ''
+      job_type: 'دائم', notes: '', photo_url: '', delegation_start_date: '', delegation_end_date: ''
     })
     setIsModalOpen(true)
     setActiveTab('basic')
@@ -471,16 +515,32 @@ export default function EmployeesPage() {
 
         {dashboardError && <p role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">{dashboardError}</p>}
 
-        <section aria-label="مؤشرات منظومة شؤون الموظفين" className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section aria-label="مؤشرات منظومة شؤون الموظفين" className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-xl border-r-8 border-[#157A3F] bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold text-gray-500">إجمالي عدد الموظفين</h2>
             <p className="mt-2 text-3xl font-bold text-[#157A3F]">{employeeCount ?? '—'}</p>
+          </article>
+          <article className="rounded-xl border-r-8 border-emerald-500 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-500">على رأس العمل</h2>
+            <p className="mt-2 text-3xl font-bold text-emerald-700">{onDutyCount ?? '—'}</p>
+          </article>
+          <article className="rounded-xl border-r-8 border-purple-500 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-500">في إجازة حالياً</h2>
+            <p className="mt-2 text-3xl font-bold text-purple-700">{onLeaveCount ?? '—'}</p>
+          </article>
+          <article className="rounded-xl border-r-8 border-indigo-500 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-500">منتدبون ومعارون</h2>
+            <p className="mt-2 text-3xl font-bold text-indigo-700">{delegatedCount ?? '—'}</p>
           </article>
           <article className="rounded-xl border-r-8 border-[#F4B41A] bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold text-gray-500">طلبات الإجازة قيد الانتظار</h2>
             <p className="mt-2 text-3xl font-bold text-amber-700">{pendingLeaveCount ?? '—'}</p>
           </article>
-          <article className="rounded-xl border-r-8 border-blue-600 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-1">
+          <article className="rounded-xl border-r-8 border-red-500 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-500">عهد غير معادة</h2>
+            <p className="mt-2 text-3xl font-bold text-red-700">{unreturnedAssetsCount ?? '—'}</p>
+          </article>
+          <article className="rounded-xl border-r-8 border-blue-600 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-2">
             <h2 className="text-sm font-semibold text-gray-500">عدد الموظفين في كل فرع</h2>
             {branchCounts.length > 0 ? (
               <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -497,8 +557,16 @@ export default function EmployeesPage() {
 
         <section aria-labelledby="employee-leave-alerts" className="mb-8 rounded-xl border-r-8 border-red-500 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 id="employee-leave-alerts" className="text-lg font-bold text-gray-800">تنبيهات طلبات الإجازة</h2>
-            <Link href="/dashboard/leaves" className="text-sm font-bold text-[#157A3F] hover:underline">عرض جميع الطلبات</Link>
+            <h2 id="employee-leave-alerts" className="text-lg font-bold text-gray-800">المهام والتنبيهات</h2>
+            <Link href="/dashboard/leaves" className="text-sm font-bold text-[#157A3F] hover:underline">عرض الطلبات</Link>
+          </div>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <Link href="/dashboard/employees/assets" className="rounded-lg border bg-red-50 p-4 text-sm font-semibold text-red-800 hover:bg-red-100">
+              عهد تحتاج إلى متابعة: {unreturnedAssetsCount ?? '—'}
+            </Link>
+            <Link href="/dashboard/employees/reports" className="rounded-lg border bg-amber-50 p-4 text-sm font-semibold text-amber-800 hover:bg-amber-100">
+              موظفون مستحقون للترقية وفق معيار 4 سنوات: {promotionEligibleEmployees.length}
+            </Link>
           </div>
           {pendingLeaves.length ? (
             <ul className="divide-y">
@@ -511,6 +579,19 @@ export default function EmployeesPage() {
             </ul>
           ) : (
             <p className="py-2 text-sm text-gray-500">{pendingLeaveCount === null ? 'جاري تحميل التنبيهات...' : 'لا توجد طلبات إجازة بانتظار الاعتماد.'}</p>
+          )}
+          {promotionEligibleEmployees.length > 0 && (
+            <div className="mt-4 border-t pt-4">
+              <h3 className="mb-2 font-semibold text-gray-700">قائمة أولية للمستحقين للترقية</h3>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {promotionEligibleEmployees.slice(0, 5).map((eligible) => (
+                  <li key={eligible.id} className="rounded-lg bg-amber-50 p-3 text-sm">
+                    <span className="font-semibold">{eligible.full_name}</span>
+                    <span className="mr-2 text-gray-600">منذ {eligible.eligible_since}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
 
@@ -639,8 +720,12 @@ export default function EmployeesPage() {
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الرقم الوطني:</span>{selectedEmp.national_id || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الرقم الوظيفي:</span>{selectedEmp.employee_number || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ الميلاد:</span>{selectedEmp.birth_date || '-'}</div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">مكان الميلاد:</span>{selectedEmp.birth_place || '-'}</div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الجنسية:</span>{selectedEmp.nationality || '-'}</div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الجنس:</span>{selectedEmp.gender || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الحالة الاجتماعية:</span>{selectedEmp.social_status || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">رقم الهاتف:</span><span dir="ltr">{selectedEmp.phone || '-'}</span></div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">البريد الإلكتروني:</span>{selectedEmp.email || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">مكان الإقامة:</span>{selectedEmp.address || '-'}</div>
                   </div>
                 </div>
@@ -661,12 +746,18 @@ export default function EmployeesPage() {
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">القسم:</span>{selectedEmp.department || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الفرع:</span><span className="font-bold text-blue-700">{selectedEmp.branch || 'الإدارة الرئيسيه / طرابلس'}</span></div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الدرجة:</span>{selectedEmp.grade || '-'}</div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الفئة:</span>{selectedEmp.category || '-'}</div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">الرتبة:</span>{selectedEmp.rank || '-'}</div>
+                    <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ آخر ترقية:</span>{selectedEmp.last_promotion_date || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">نوع الوظيفة:</span>{selectedEmp.job_type || 'دائم'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ التعيين:</span>{selectedEmp.hire_date || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ مباشرة العمل:</span>{selectedEmp.work_start_date || '-'}</div>
                     <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">جهة الندب/الإعارة:</span>{selectedEmp.delegation_entity || 'لا يوجد'}</div>
                     {['delegated', 'seconded'].includes(selectedEmp.employment_status) && (
-                      <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ بداية الندب/الإعارة:</span>{selectedEmp.delegation_start_date || '-'}</div>
+                      <>
+                        <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ بداية الندب/الإعارة:</span>{selectedEmp.delegation_start_date || '-'}</div>
+                        <div className="bg-gray-50 p-3 rounded print:border print:bg-white"><span className="text-gray-500 block text-xs print:inline print:ml-1">تاريخ نهاية الندب/الإعارة:</span>{selectedEmp.delegation_end_date || 'مستمر'}</div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -778,8 +869,19 @@ export default function EmployeesPage() {
                     <div><label className="block text-sm mb-1">الاسم الرباعي *</label><input type="text" value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} required className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div><label className="block text-sm mb-1">الرقم الوطني</label><input type="text" value={formData.national_id} onChange={(e) => setFormData({...formData, national_id: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div><label className="block text-sm mb-1">تاريخ الميلاد</label><input type="date" value={formData.birth_date} onChange={(e) => setFormData({...formData, birth_date: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div><label className="block text-sm mb-1">مكان الميلاد</label><input type="text" value={formData.birth_place} onChange={(e) => setFormData({...formData, birth_place: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div><label className="block text-sm mb-1">الجنسية</label><input type="text" value={formData.nationality} onChange={(e) => setFormData({...formData, nationality: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div>
+                      <label className="block text-sm mb-1">الجنس</label>
+                      <select value={formData.gender} onChange={(e) => setFormData({...formData, gender: e.target.value})} className="w-full rounded-lg border px-4 py-2">
+                        <option value="">غير محدد</option>
+                        <option value="ذكر">ذكر</option>
+                        <option value="أنثى">أنثى</option>
+                      </select>
+                    </div>
                     <div><label className="block text-sm mb-1">الحالة الاجتماعية</label><input type="text" value={formData.social_status} onChange={(e) => setFormData({...formData, social_status: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div><label className="block text-sm mb-1">رقم الهاتف</label><input type="text" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div><label className="block text-sm mb-1">البريد الإلكتروني</label><input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div className="md:col-span-2"><label className="block text-sm mb-1">مكان الإقامة</label><input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div className="md:col-span-2">
                       <label className="mb-1 block text-sm">الصورة الشخصية للبطاقة</label>
@@ -843,6 +945,9 @@ export default function EmployeesPage() {
                       </select>
                     </div>
                     <div><label className="block text-sm mb-1">الدرجة</label><input type="text" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div><label className="block text-sm mb-1">الفئة</label><input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div><label className="block text-sm mb-1">الرتبة</label><input type="text" value={formData.rank} onChange={(e) => setFormData({...formData, rank: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
+                    <div><label className="block text-sm mb-1">تاريخ آخر ترقية</label><input type="date" value={formData.last_promotion_date} onChange={(e) => setFormData({...formData, last_promotion_date: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     <div>
                       <label className="block text-sm mb-1">نوع الوظيفة</label>
                       <select value={formData.job_type} onChange={(e) => setFormData({...formData, job_type: e.target.value})} className="w-full px-4 py-2 border rounded-lg">
@@ -869,10 +974,16 @@ export default function EmployeesPage() {
                     </div>
                     <div><label className="block text-sm mb-1">جهة الندب/الإعارة</label><input type="text" value={formData.delegation_entity} onChange={(e) => setFormData({...formData, delegation_entity: e.target.value})} className="w-full px-4 py-2 border rounded-lg" /></div>
                     {['delegated', 'seconded'].includes(formData.employment_status) && (
-                      <div>
-                        <label className="block text-sm mb-1">تاريخ بداية الندب/الإعارة</label>
-                        <input type="date" value={formData.delegation_start_date} onChange={(e) => setFormData({...formData, delegation_start_date: e.target.value})} className="w-full rounded-lg border px-4 py-2" />
-                      </div>
+                      <>
+                        <div>
+                          <label className="block text-sm mb-1">تاريخ بداية الندب/الإعارة</label>
+                          <input type="date" value={formData.delegation_start_date} onChange={(e) => setFormData({...formData, delegation_start_date: e.target.value})} className="w-full rounded-lg border px-4 py-2" />
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1">تاريخ نهاية الندب/الإعارة</label>
+                          <input type="date" value={formData.delegation_end_date} min={formData.delegation_start_date || undefined} onChange={(e) => setFormData({...formData, delegation_end_date: e.target.value})} className="w-full rounded-lg border px-4 py-2" />
+                        </div>
+                      </>
                     )}
                   </div>
                 )}

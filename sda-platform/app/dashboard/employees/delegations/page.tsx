@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getDelegations, type DelegatedEmployee } from './actions'
+import { getDelegations, updateDelegationDates, type DelegatedEmployee } from './actions'
 
 function parseDate(date: string): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
@@ -42,6 +42,10 @@ export default function DelegationsPage() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [editingEmployee, setEditingEmployee] = useState<DelegatedEmployee | null>(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [savingDates, setSavingDates] = useState(false)
 
   const fetchDelegations = useCallback(async () => {
     try {
@@ -57,6 +61,28 @@ export default function DelegationsPage() {
   }, [])
 
   useEffect(() => { void Promise.resolve().then(fetchDelegations) }, [fetchDelegations])
+
+  const saveDates = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!editingEmployee) return
+    setSavingDates(true)
+    setErrorMessage('')
+    try {
+      const result = await updateDelegationDates({
+        employeeId: editingEmployee.id,
+        startDate,
+        endDate,
+      })
+      if ('error' in result) throw new Error(result.error)
+      setEditingEmployee(null)
+      await fetchDelegations()
+      if (result.warning) setErrorMessage(`تم حفظ التواريخ، لكن ${result.warning}`)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'تعذر حفظ تواريخ الندب.')
+    } finally {
+      setSavingDates(false)
+    }
+  }
 
   const filteredEmployees = employees.filter((employee) =>
     [employee.full_name, employee.employee_number, employee.department, employee.branch, employee.delegation_entity]
@@ -107,6 +133,7 @@ export default function DelegationsPage() {
                     <th className="p-3">مدة الندب/الإعارة</th>
                     <th className="p-3">الفرع</th>
                     <th className="p-3">الهاتف</th>
+                    <th className="p-3">إجراء</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,6 +161,19 @@ export default function DelegationsPage() {
                         </td>
                         <td className="p-3">{employee.branch || 'الإدارة الرئيسيه / طرابلس'}</td>
                         <td className="p-3" dir="ltr">{employee.phone || '-'}</td>
+                        <td className="p-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingEmployee(employee)
+                              setStartDate(employee.delegation_start_date ?? '')
+                              setEndDate(employee.delegation_end_date ?? '')
+                            }}
+                            className="rounded-lg border px-3 py-1 text-sm text-indigo-700 hover:bg-indigo-50"
+                          >
+                            تعديل المدة
+                          </button>
+                        </td>
                       </tr>
                     )
                   })}
@@ -142,6 +182,26 @@ export default function DelegationsPage() {
             </div>
           )}
         </section>
+
+        {editingEmployee && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <section role="dialog" aria-modal="true" aria-labelledby="delegation-dialog-title" className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+              <h2 id="delegation-dialog-title" className="mb-5 text-xl font-bold text-indigo-700">تعديل مدة {editingEmployee.full_name}</h2>
+              <form onSubmit={saveDates} className="space-y-4">
+                <label className="block text-sm font-semibold">تاريخ البداية
+                  <input required type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+                </label>
+                <label className="block text-sm font-semibold">تاريخ النهاية (اختياري)
+                  <input type="date" min={startDate || undefined} value={endDate} onChange={(event) => setEndDate(event.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" />
+                </label>
+                <div className="flex gap-3 border-t pt-4">
+                  <button disabled={savingDates} className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white disabled:opacity-50">{savingDates ? 'جارٍ الحفظ...' : 'حفظ'}</button>
+                  <button type="button" disabled={savingDates} onClick={() => setEditingEmployee(null)} className="flex-1 rounded-lg bg-gray-100 px-4 py-2 font-bold">إلغاء</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
       </div>
     </main>
   )

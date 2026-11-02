@@ -109,8 +109,9 @@ export default function Sidebar({
             <NavigationLink href="/dashboard/employees/promotions" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />الترقيات والعلاوات</NavigationLink>
             <NavigationLink href="/dashboard/employees/decisions" onClick={closeMobileMenu}><FileText size={16} aria-hidden="true" />القرارات الإدارية</NavigationLink>
             <NavigationLink href="/dashboard/employees/reports" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />التقارير والتصدير</NavigationLink>
+            <NavigationLink href="/dashboard/employees/archive" onClick={closeMobileMenu}><FileText size={16} aria-hidden="true" />أرشيف ملفات الموظفين</NavigationLink>
             <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
-            <NavigationLink href="/dashboard/employees/custody" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
+            <NavigationLink href="/dashboard/employees/assets" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
           </nav>
         )}
       </section>

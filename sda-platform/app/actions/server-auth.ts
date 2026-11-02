@@ -87,7 +87,10 @@ export interface AdminDatabase {
           national_id: string | null
           work_start_date: string | null
           birth_date: string | null
+          birth_place: string | null
+          nationality: string | null
           social_status: string | null
+          gender: string | null
           qualification: string | null
           major: string | null
           university: string | null
@@ -95,10 +98,14 @@ export interface AdminDatabase {
           job_title: string | null
           department: string | null
           grade: string | null
+          category: string | null
+          rank: string | null
+          last_promotion_date: string | null
           basic_salary: number | null
           variable_salary: number | null
           phone: string | null
           address: string | null
+          email: string | null
           employment_status: string | null
           delegation_entity: string | null
           branch: string | null
@@ -117,8 +124,17 @@ export interface AdminDatabase {
           full_name: string
           employee_number?: string | null
           national_id?: string | null
+          birth_place?: string | null
+          nationality?: string | null
+          social_status?: string | null
+          gender?: string | null
+          address?: string | null
+          email?: string | null
           job_title?: string | null
           department?: string | null
+          category?: string | null
+          rank?: string | null
+          last_promotion_date?: string | null
           delegation_start_date?: string | null
           delegation_end_date?: string | null
           leave_balance?: number | null
@@ -132,7 +148,10 @@ export interface AdminDatabase {
           national_id?: string | null
           work_start_date?: string | null
           birth_date?: string | null
+          birth_place?: string | null
+          nationality?: string | null
           social_status?: string | null
+          gender?: string | null
           qualification?: string | null
           major?: string | null
           university?: string | null
@@ -140,10 +159,14 @@ export interface AdminDatabase {
           job_title?: string | null
           department?: string | null
           grade?: string | null
+          category?: string | null
+          rank?: string | null
+          last_promotion_date?: string | null
           basic_salary?: number | null
           variable_salary?: number | null
           phone?: string | null
           address?: string | null
+          email?: string | null
           employment_status?: string | null
           delegation_entity?: string | null
           branch?: string | null
@@ -226,6 +249,66 @@ export interface AdminDatabase {
           status?: string
           manager_id?: string | null
           manager_notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      assets: {
+        Row: {
+          id: string
+          employee_id: string
+          asset_name: string
+          serial_number: string | null
+          status: string
+          delivered_date: string
+          returned_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          asset_name: string
+          serial_number?: string | null
+          status?: string
+          delivered_date?: string
+          returned_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          asset_name?: string
+          serial_number?: string | null
+          status?: string
+          delivered_date?: string
+          returned_date?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          id: string
+          employee_id: string
+          document_type: string
+          file_url: string
+          file_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          document_type: string
+          file_url: string
+          file_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          document_type?: string
+          file_url?: string
+          file_name?: string
           created_at?: string
         }
         Relationships: []

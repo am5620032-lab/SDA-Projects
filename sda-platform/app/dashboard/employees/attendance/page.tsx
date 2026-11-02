@@ -33,6 +33,15 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
+function getWorkDuration(checkIn: string, checkOut: string | null): string {
+  if (!checkOut) return 'غير مكتملة'
+  const durationMinutes = Math.floor((Date.parse(checkOut) - Date.parse(checkIn)) / 60_000)
+  if (!Number.isFinite(durationMinutes) || durationMinutes < 0) return 'غير متاحة'
+  const hours = Math.floor(durationMinutes / 60)
+  const minutes = durationMinutes % 60
+  return minutes ? `${hours} ساعة و${minutes} دقيقة` : `${hours} ساعة`
+}
+
 export default function EmployeeAttendancePage() {
   const [employee, setEmployee] = useState<AttendanceEmployee | null>(null)
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null)
@@ -137,7 +146,14 @@ export default function EmployeeAttendancePage() {
               </button>
             )}
           </div>
-          {todayRecord && <p className="mt-4 text-sm text-gray-600">الحضور: {formatTime(todayRecord.check_in)}{todayRecord.check_out ? ` — الانصراف: ${formatTime(todayRecord.check_out)}` : ''} — التأخير: {todayRecord.late_minutes} دقيقة</p>}
+          {todayRecord && (
+            <p className="mt-4 text-sm text-gray-600">
+              الحضور: {formatTime(todayRecord.check_in)}
+              {todayRecord.check_out ? ` — الانصراف: ${formatTime(todayRecord.check_out)}` : ''}
+              {' — التأخير: '}{todayRecord.late_minutes} دقيقة
+              {' — ساعات العمل: '}{getWorkDuration(todayRecord.check_in, todayRecord.check_out)}
+            </p>
+          )}
         </section>
 
         {successMessage && <p role="status" className="mb-4 rounded-lg bg-green-50 p-4 text-sm font-semibold text-green-700">{successMessage}</p>}
@@ -159,6 +175,7 @@ export default function EmployeeAttendancePage() {
                     <th className="p-3">وقت الحضور</th>
                     <th className="p-3">وقت الانصراف</th>
                     <th className="p-3">دقائق التأخير</th>
+                    <th className="p-3">ساعات العمل الفعلية</th>
                     <th className="p-3">الحالة</th>
                   </tr>
                 </thead>
@@ -170,6 +187,7 @@ export default function EmployeeAttendancePage() {
                       <td className="p-3">{formatTime(record.check_in)}</td>
                       <td className="p-3">{formatTime(record.check_out)}</td>
                       <td className="p-3">{record.late_minutes} دقيقة</td>
+                      <td className="p-3">{getWorkDuration(record.check_in, record.check_out)}</td>
                       <td className="p-3">
                         <span className={`rounded-full px-3 py-1 text-xs font-bold ${record.check_out ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
                           {record.status === 'absent' ? 'غائب' : record.check_out ? 'انصرف' : 'حاضر'}

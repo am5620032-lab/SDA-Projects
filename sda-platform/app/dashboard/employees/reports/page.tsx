@@ -1,8 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getHrReportData, type HrReportKind, type HrReportRow } from './actions'
+import {
+  getHrReportData,
+  getPromotionEligibleEmployees,
+  type HrReportKind,
+  type HrReportRow,
+  type PromotionEligibleEmployee,
+} from './actions'
 
 const reports: { value: HrReportKind; label: string }[] = [
   { value: 'employees', label: 'كشف الموظفين' },
@@ -16,6 +22,23 @@ export default function EmployeesReportsPage() {
   const [rows, setRows] = useState<HrReportRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [eligibleEmployees, setEligibleEmployees] = useState<PromotionEligibleEmployee[]>([])
+  const [eligibilityLoading, setEligibilityLoading] = useState(true)
+  const [eligibilityError, setEligibilityError] = useState('')
+
+  const loadEligibility = useCallback(async () => {
+    try {
+      const result = await getPromotionEligibleEmployees()
+      if ('error' in result) throw new Error(result.error)
+      setEligibleEmployees(result.data)
+    } catch (loadError) {
+      setEligibilityError(loadError instanceof Error ? loadError.message : 'تعذر تحميل قائمة المستحقين للترقية.')
+    } finally {
+      setEligibilityLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void Promise.resolve().then(loadEligibility) }, [loadEligibility])
 
   const loadReport = async () => {
     setLoading(true)
@@ -77,6 +100,32 @@ export default function EmployeesReportsPage() {
             <button type="button" onClick={() => void printPdf()} disabled={loading || rows.length === 0} className="rounded-lg bg-gray-800 px-5 py-2 font-bold text-white disabled:opacity-50">طباعة / حفظ PDF</button>
           </div>
           <p className="mt-2 text-xs text-gray-500">يستخدم PDF نافذة الطباعة في المتصفح للحفاظ على ظهور النص العربي بشكل صحيح.</p>
+        </section>
+
+        <section className="mb-6 rounded-xl bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-bold text-amber-700">المستحقون للترقية</h2>
+          <p className="mb-4 text-sm text-gray-500">استحقاق أولي بعد إكمال أربع سنوات من التعيين أو آخر ترقية؛ يخضع للمراجعة وفق اللوائح المعتمدة.</p>
+          {eligibilityError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{eligibilityError}</p>}
+          {eligibilityLoading ? <p className="py-4 text-gray-500">جارٍ فحص مدد الخدمة...</p> : eligibleEmployees.length === 0 ? (
+            <p className="py-4 text-gray-500">لا يوجد موظفون مستحقون وفق معيار السنوات الأربع حالياً.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px] text-right text-sm">
+                <thead className="bg-amber-50 text-gray-700">
+                  <tr><th className="p-3">الموظف</th><th className="p-3">المسمى الوظيفي</th><th className="p-3">تاريخ التعيين</th><th className="p-3">آخر ترقية</th><th className="p-3">تاريخ الاستحقاق</th></tr>
+                </thead>
+                <tbody>{eligibleEmployees.map((employee) => (
+                  <tr key={employee.id} className="border-t">
+                    <td className="p-3 font-semibold">{employee.full_name}</td>
+                    <td className="p-3">{employee.job_title || '—'}</td>
+                    <td className="p-3">{employee.hire_date || '—'}</td>
+                    <td className="p-3">{employee.last_promotion_date || 'لا توجد ترقية سابقة'}</td>
+                    <td className="p-3">{employee.eligible_since}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="rounded-xl bg-white p-6 shadow-sm print:rounded-none print:p-0 print:shadow-none">
