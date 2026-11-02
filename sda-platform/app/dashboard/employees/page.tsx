@@ -465,6 +465,12 @@ export default function EmployeesPage() {
     setIsViewModalOpen(true)
   }
 
+  const closeEmployeeView = () => {
+    setIsViewModalOpen(false)
+    setIsCardModalOpen(false)
+    setSelectedEmp(null)
+  }
+
   const openCard = (emp: Employee) => {
     setSelectedEmp(emp)
     setIsFlipped(false)
@@ -705,21 +711,20 @@ export default function EmployeesPage() {
 
         {/* View Modal */}
         {isViewModalOpen && selectedEmp && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto print:bg-white print:p-0 print:static">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 print:static print:bg-white print:p-0">
             <div className="employee-file-print-sheet bg-white rounded-xl shadow-xl w-full max-w-3xl p-6 md:p-8 relative my-8 print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0 print:border-none">
               
-              {/* أزرار التحكم (تختفي عند الطباعة) */}
-              <div className="flex justify-between items-center mb-6 print:hidden border-b pb-4">
+              <div className="sticky top-0 z-10 mb-6 flex flex-col gap-4 border-b bg-white py-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-2xl font-bold text-[#157A3F]">الملف الشامل: {selectedEmp.full_name}</h2>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-[#157A3F] px-4 py-2 font-bold text-white shadow-md transition hover:bg-green-800">
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => window.print()} className="print:hidden inline-flex items-center gap-2 rounded-lg bg-[#157A3F] px-4 py-2 font-bold text-white shadow-md transition hover:bg-green-800">
                     <Printer size={18} aria-hidden="true" />
                     طباعة الملف
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setIsViewModalOpen(false); setSelectedEmp(null) }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 font-bold text-red-600 transition hover:bg-red-100"
+                    onClick={closeEmployeeView}
+                    className="print:hidden inline-flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 font-bold text-red-600 transition hover:bg-red-100"
                   >
                     <X size={18} aria-hidden="true" />
                     إغلاق
@@ -793,6 +798,16 @@ export default function EmployeesPage() {
                 )}
 
               </div>
+              <footer className="mt-6 flex flex-wrap justify-end gap-3 border-t pt-4 print:hidden">
+                <button type="button" onClick={() => window.print()} className="print:hidden inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-blue-800">
+                  <Printer size={18} aria-hidden="true" />
+                  طباعة الملف
+                </button>
+                <button type="button" onClick={closeEmployeeView} className="print:hidden inline-flex items-center gap-2 rounded-lg bg-gray-200 px-5 py-3 font-bold text-gray-800 transition hover:bg-gray-300">
+                  <X size={18} aria-hidden="true" />
+                  إغلاق العرض
+                </button>
+              </footer>
             </div>
           </div>
         )}
@@ -800,12 +815,18 @@ export default function EmployeesPage() {
         {isCardModalOpen && selectedEmp && (
           <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 overflow-y-auto bg-black/50 p-4 print:static print:bg-white print:p-0">
             <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl print:hidden">
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-6 flex flex-col gap-3 border-b pb-4">
                 <h2 className="text-lg font-bold text-gray-800">بطاقة الموظف</h2>
-                <div className="flex gap-2">
-                  <button onClick={() => setIsFlipped((flipped) => !flipped)} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-200">قلب البطاقة</button>
-                  <button onClick={() => window.print()} className="rounded-lg bg-[#157A3F] px-4 py-2 text-sm font-bold text-white">طباعة البطاقة</button>
-                  <button onClick={() => setIsCardModalOpen(false)} className="rounded-lg bg-red-50 px-4 py-2 text-sm font-bold text-red-600">إغلاق</button>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setIsFlipped((flipped) => !flipped)} className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700 hover:bg-gray-200">قلب البطاقة</button>
+                  <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-[#157A3F] px-3 py-2 text-sm font-bold text-white">
+                    <Printer size={18} aria-hidden="true" />
+                    طباعة الملف
+                  </button>
+                  <button type="button" onClick={closeEmployeeView} className="inline-flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-600">
+                    <X size={18} aria-hidden="true" />
+                    إغلاق
+                  </button>
                 </div>
               </div>
             </div>
