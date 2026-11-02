@@ -22,6 +22,36 @@ export interface AdminDatabase {
         Update: { id?: string; full_name?: string | null; role?: string }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          id: string
+          system_name: string
+          system_logo_url: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          address: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          system_name: string
+          system_logo_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          address?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          system_name?: string
+          system_logo_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          address?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           id: string
@@ -30,6 +60,7 @@ export interface AdminDatabase {
           actor_email: string | null
           action: 'add' | 'update' | 'delete'
           details: string
+          ip_address: string | null
           created_at: string
         }
         Insert: {
@@ -39,6 +70,7 @@ export interface AdminDatabase {
           actor_email?: string | null
           action: 'add' | 'update' | 'delete'
           details: string
+          ip_address?: string | null
           created_at?: string
         }
         Update: {
@@ -48,6 +80,7 @@ export interface AdminDatabase {
           actor_email?: string | null
           action?: 'add' | 'update' | 'delete'
           details?: string
+          ip_address?: string | null
           created_at?: string
         }
         Relationships: []

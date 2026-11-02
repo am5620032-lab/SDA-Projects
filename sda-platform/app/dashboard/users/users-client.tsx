@@ -7,6 +7,7 @@ import { createUser } from '@/app/actions/create-user'
 import { deleteUser } from '@/app/actions/delete-user'
 import { getAllUsers, type ManagedUser } from '@/app/actions/get-all-users'
 import { getAuditLogs, type AuditLog } from '@/app/actions/get-audit-logs'
+import { setUserBanned, updateUserRole } from '@/app/actions/manage-user'
 
 type UserRole = 'president' | 'vice_president' | 'admin_manager' | 'employee'
 
@@ -14,8 +15,8 @@ const roleLabels: Record<string, string> = {
   president: 'رئيس',
   vice_president: 'نائب الرئيس',
   admin_manager: 'مدير إداري',
-  employee: 'موظف',
   it_manager: 'مدير تقنية المعلومات',
+  employee: 'موظف',
 }
 
 const actionLabels = { add: 'إضافة', update: 'تعديل', delete: 'حذف' } as const
@@ -27,7 +28,10 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, string>>({})
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [roleUser, setRoleUser] = useState<ManagedUser | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [formData, setFormData] = useState({
@@ -112,6 +116,46 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
     }
   }
 
+  const handleRoleUpdate = async (user: ManagedUser) => {
+    const role = roleDrafts[user.id] ?? user.role ?? ''
+    setUpdatingId(user.id)
+    setErrorMessage('')
+    setSuccessMessage('')
+    try {
+      const result = await updateUserRole(user.id, role)
+      if ('error' in result) setErrorMessage(result.error)
+      else {
+        setSuccessMessage(result.warning ? `تم تحديث الدور. ${result.warning}` : 'تم تحديث دور المستخدم.')
+        setRoleUser(null)
+        await fetchProfiles()
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'تعذر تحديث دور المستخدم.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const handleBanToggle = async (user: ManagedUser) => {
+    setUpdatingId(user.id)
+    setErrorMessage('')
+    setSuccessMessage('')
+    try {
+      const result = await setUserBanned(user.id, user.is_active)
+      if ('error' in result) setErrorMessage(result.error)
+      else {
+        setSuccessMessage(result.warning
+          ? `تم ${user.is_active ? 'إيقاف' : 'تفعيل'} الحساب. ${result.warning}`
+          : `تم ${user.is_active ? 'إيقاف' : 'تفعيل'} الحساب.`)
+        await fetchProfiles()
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'تعذر تحديث حالة المستخدم.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 p-4 font-sans md:p-8">
       <div className="mx-auto max-w-5xl">
@@ -155,7 +199,9 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
                     <tr className="border-b bg-gray-50 text-gray-600">
                       <th className="p-3">الاسم الكامل</th>
                       <th className="p-3">البريد الإلكتروني</th>
-                      <th className="p-3">الصلاحية</th>
+                      <th className="p-3">الرقم الوطني</th>
+                      <th className="p-3">الدور</th>
+                      <th className="p-3">الحالة</th>
                       <th className="p-3 text-center">الإجراء</th>
                     </tr>
                   </thead>
@@ -164,17 +210,47 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
                       <tr key={user.id} className="border-b last:border-0">
                         <td className="p-3 font-medium">{user.full_name || '-'}</td>
                         <td className="p-3 text-left" dir="ltr">{user.email || '-'}</td>
-                        <td className="p-3">{user.role ? roleLabels[user.role] ?? user.role : 'غير محددة'}</td>
+                        <td className="p-3">{user.national_id || '-'}</td>
+                        <td className="p-3">
+                          {user.role ? roleLabels[user.role] ?? user.role : 'غير محدد'}
+                        </td>
+                        <td className="p-3">
+                          <span className={user.is_active ? 'text-green-700' : 'text-red-700'}>
+                            {user.is_active ? 'نشط' : 'موقوف'}
+                          </span>
+                        </td>
                         <td className="p-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(user)}
-                            disabled={deletingId === user.id || currentUserId === user.id}
-                            title={currentUserId === user.id ? 'لا يمكن حذف الحساب الحالي' : 'حذف المستخدم نهائياً'}
-                            className="rounded-lg bg-red-50 px-3 py-1 font-semibold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {deletingId === user.id ? 'جارٍ الحذف...' : 'حذف'}
-                          </button>
+                          <div className="flex justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRoleDrafts({ ...roleDrafts, [user.id]: user.role ?? '' })
+                                setErrorMessage('')
+                                setRoleUser(user)
+                              }}
+                              disabled={currentUserId === user.id}
+                              className="rounded-lg bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 disabled:opacity-50"
+                            >
+                              تغيير الدور
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBanToggle(user)}
+                              disabled={updatingId === user.id || currentUserId === user.id}
+                              className={`rounded-lg px-3 py-1 font-semibold disabled:opacity-50 ${user.is_active ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}
+                            >
+                              {user.is_active ? 'إيقاف' : 'تفعيل'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(user)}
+                              disabled={deletingId === user.id || currentUserId === user.id}
+                              title={currentUserId === user.id ? 'لا يمكن حذف الحساب الحالي' : 'حذف المستخدم نهائياً'}
+                              className="rounded-lg bg-red-50 px-3 py-1 font-semibold text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {deletingId === user.id ? 'جارٍ الحذف...' : 'حذف'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -216,6 +292,43 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
               </div>
             )}
           </section>
+        )}
+
+        {roleUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <section role="dialog" aria-modal="true" aria-labelledby="change-role-title" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+              <h2 id="change-role-title" className="mb-2 text-xl font-bold text-[#157A3F]">تغيير دور المستخدم</h2>
+              <p className="mb-5 text-sm text-gray-600">{roleUser.full_name || roleUser.email}</p>
+              <label htmlFor="managed-user-role" className="mb-1 block text-sm font-medium">الدور الوظيفي</label>
+              <select
+                id="managed-user-role"
+                value={roleDrafts[roleUser.id] ?? ''}
+                onChange={(event) => setRoleDrafts({ ...roleDrafts, [roleUser.id]: event.target.value })}
+                className="mb-4 w-full rounded-lg border px-4 py-2"
+              >
+                <option value="" disabled>اختر الدور</option>
+                <option value="president">رئيس</option>
+                <option value="admin_manager">مدير إداري</option>
+                <option value="it_manager">مدير تقنية المعلومات</option>
+                <option value="employee">موظف</option>
+                {roleUser.role && !['president', 'admin_manager', 'it_manager', 'employee'].includes(roleUser.role) && (
+                  <option value={roleUser.role}>{roleLabels[roleUser.role] ?? roleUser.role} (الدور الحالي)</option>
+                )}
+              </select>
+              {errorMessage && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{errorMessage}</p>}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleRoleUpdate(roleUser)}
+                  disabled={updatingId === roleUser.id || !roleDrafts[roleUser.id]}
+                  className="flex-1 rounded-lg bg-[#157A3F] py-2 font-bold text-white disabled:opacity-50"
+                >
+                  {updatingId === roleUser.id ? 'جارٍ الحفظ...' : 'حفظ الدور'}
+                </button>
+                <button type="button" onClick={() => setRoleUser(null)} className="flex-1 rounded-lg bg-gray-100 py-2 font-bold text-gray-700">إلغاء</button>
+              </div>
+            </section>
+          </div>
         )}
 
         {isModalOpen && canManageUsers && (

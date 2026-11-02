@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronDown,
   ClipboardCheck,
+  DatabaseBackup,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -17,6 +18,9 @@ import {
   Package,
   Scale,
   ShieldCheck,
+  ScrollText,
+  Settings,
+  ChartNoAxesCombined,
   UsersRound,
   X,
 } from 'lucide-react'
@@ -133,17 +137,29 @@ export default function Sidebar({
       )}
 
       {canManageModules && (
-        <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}>
-          <UsersRound size={18} aria-hidden="true" />
-          إدارة المستخدمين
-        </NavigationLink>
-      )}
-
-      {canManageModules && (
-        <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}>
-          <KeyRound size={18} aria-hidden="true" />
-          إدارة صلاحيات المنظومات
-        </NavigationLink>
+        <section>
+          <h2 className="px-3 pb-1 text-xs font-bold text-gray-400">الإدارة العليا</h2>
+          <nav aria-label="الإدارة العليا" className="space-y-1">
+            <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}>
+              <UsersRound size={18} aria-hidden="true" />إدارة المستخدمين
+            </NavigationLink>
+            <NavigationLink href="/dashboard/audit-logs" onClick={closeMobileMenu}>
+              <ScrollText size={18} aria-hidden="true" />سجل العمليات
+            </NavigationLink>
+            <NavigationLink href="/dashboard/reports" onClick={closeMobileMenu}>
+              <ChartNoAxesCombined size={18} aria-hidden="true" />التقارير والإحصائيات
+            </NavigationLink>
+            <NavigationLink href="/dashboard/settings" onClick={closeMobileMenu}>
+              <Settings size={18} aria-hidden="true" />إعدادات النظام
+            </NavigationLink>
+            <NavigationLink href="/dashboard/backup" onClick={closeMobileMenu}>
+              <DatabaseBackup size={18} aria-hidden="true" />النسخ الاحتياطي
+            </NavigationLink>
+            <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}>
+              <KeyRound size={18} aria-hidden="true" />إدارة صلاحيات المنظومات
+            </NavigationLink>
+          </nav>
+        </section>
       )}
 
       <form action={logoutFromPlatform} className="pt-2">
