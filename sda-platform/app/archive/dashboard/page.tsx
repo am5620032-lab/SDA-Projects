@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation'
-import { createArchiveServerClient } from '@/app/archive/auth'
+import { cookies } from 'next/headers'
+import { MODULE_ACCESS_COOKIES, verifyModuleAccessToken } from '@/app/archive/module-auth'
 import { archiveLogout } from '@/app/archive/login/actions'
 import ArchiveDashboard from './archive-dashboard'
 
 export default async function ArchiveDashboardPage() {
-  const supabase = await createArchiveServerClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user?.email?.toLowerCase().endsWith('@archive.sda')) redirect('/archive/login')
+  const cookieStore = await cookies()
+  const claims = verifyModuleAccessToken(cookieStore.get(MODULE_ACCESS_COOKIES.archive)?.value, 'archive')
+  if (!claims) redirect('/archive/login')
 
   return (
     <main dir="rtl" className="min-h-screen bg-slate-50 p-4 sm:p-8">

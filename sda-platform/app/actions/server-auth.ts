@@ -106,6 +106,36 @@ interface AdminDatabase {
         }
         Relationships: []
       }
+      module_access: {
+        Row: {
+          id: string
+          employee_id: string
+          module_name: 'archive' | 'hr'
+          username: string
+          password_hash: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          module_name: 'archive' | 'hr'
+          username: string
+          password_hash: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          module_name?: 'archive' | 'hr'
+          username?: string
+          password_hash?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

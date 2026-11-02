@@ -50,7 +50,7 @@ export default function Dashboard() {
     {
       title: 'منظومة شؤون الموظفين',
       description: 'إدارة الموظفين والحضور والإجازات والترقيات والملفات الوظيفية.',
-      href: '/dashboard/employees',
+      href: '/hr/login',
       icon: UsersRound,
       iconClass: 'bg-emerald-50 text-[#157A3F]',
       borderClass: 'border-[#157A3F]',

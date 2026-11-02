@@ -6,6 +6,8 @@ import {
   CalendarDays,
   ChevronDown,
   LayoutDashboard,
+  KeyRound,
+  LogOut,
   Menu,
   Network,
   Package,
@@ -17,6 +19,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { logoutFromPlatform } from '@/app/actions/logout'
 
 function NavigationLink({
   href,
@@ -92,9 +95,16 @@ export default function Sidebar() {
             <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
             <NavigationLink href="/dashboard/employees/custody" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
             {userRole === 'it_manager' && <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}><UsersRound size={16} aria-hidden="true" />إدارة المستخدمين</NavigationLink>}
+            {userRole === 'it_manager' && <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}><KeyRound size={16} aria-hidden="true" />صلاحيات المنظومات</NavigationLink>}
           </nav>
         )}
       </section>
+
+      <form action={logoutFromPlatform} className="pt-2">
+        <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50">
+          <LogOut size={18} aria-hidden="true" /> تسجيل الخروج من المنصة
+        </button>
+      </form>
 
     </>
   )
