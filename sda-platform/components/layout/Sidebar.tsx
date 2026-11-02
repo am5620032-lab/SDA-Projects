@@ -20,6 +20,8 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { logoutFromPlatform } from '@/app/actions/logout'
+import NotificationBell from '@/components/layout/NotificationBell'
+import type { EmployeeNotification } from '@/app/actions/notifications'
 
 function NavigationLink({
   href,
@@ -47,7 +49,13 @@ function NavigationLink({
   )
 }
 
-export default function Sidebar({ hasHrAccess }: { hasHrAccess: boolean }) {
+export default function Sidebar({
+  hasHrAccess,
+  initialNotifications,
+}: {
+  hasHrAccess: boolean
+  initialNotifications: EmployeeNotification[]
+}) {
   const pathname = usePathname()
   const [userRole, setUserRole] = useState('')
   const [isMobileOpen, setIsMobileOpen] = useState(false)
@@ -79,6 +87,8 @@ export default function Sidebar({ hasHrAccess }: { hasHrAccess: boolean }) {
       </NavigationLink>
 
       {hasHrAccess ? (
+      <>
+      <NotificationBell initialNotifications={initialNotifications} />
       <section>
         <button
           type="button"
@@ -101,6 +111,7 @@ export default function Sidebar({ hasHrAccess }: { hasHrAccess: boolean }) {
           </nav>
         )}
       </section>
+      </>
       ) : (
         <NavigationLink href="/hr/login" onClick={closeMobileMenu}>
           <UsersRound size={18} className="text-[#157A3F]" aria-hidden="true" />

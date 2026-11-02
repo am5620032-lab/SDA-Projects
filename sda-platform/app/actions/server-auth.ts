@@ -13,7 +13,7 @@ export interface AuthenticatedActor {
   role: string
 }
 
-interface AdminDatabase {
+export interface AdminDatabase {
   public: {
     Tables: {
       profiles: {
@@ -85,6 +85,9 @@ interface AdminDatabase {
           full_name: string
           employee_number: string | null
           national_id: string | null
+          job_title: string | null
+          department: string | null
+          leave_balance: number | null
           department_id: string | null
           direct_manager_id: string | null
         }
@@ -93,6 +96,9 @@ interface AdminDatabase {
           full_name: string
           employee_number?: string | null
           national_id?: string | null
+          job_title?: string | null
+          department?: string | null
+          leave_balance?: number | null
           department_id?: string | null
           direct_manager_id?: string | null
         }
@@ -101,6 +107,9 @@ interface AdminDatabase {
           full_name?: string
           employee_number?: string | null
           national_id?: string | null
+          job_title?: string | null
+          department?: string | null
+          leave_balance?: number | null
           department_id?: string | null
           direct_manager_id?: string | null
         }
@@ -132,6 +141,78 @@ interface AdminDatabase {
           username?: string
           password_hash?: string
           is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      leaves: {
+        Row: {
+          id: string
+          employee_id: string
+          leave_type: string
+          start_date: string
+          end_date: string
+          days_count: number
+          notes: string | null
+          status: string
+          manager_id: string | null
+          manager_notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          leave_type: string
+          start_date: string
+          end_date: string
+          days_count: number
+          notes?: string | null
+          status?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          leave_type?: string
+          start_date?: string
+          end_date?: string
+          days_count?: number
+          notes?: string | null
+          status?: string
+          manager_id?: string | null
+          manager_notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          employee_id: string
+          title: string
+          message: string
+          link: string | null
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          title: string
+          message: string
+          link?: string | null
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          title?: string
+          message?: string
+          link?: string | null
+          is_read?: boolean
           created_at?: string
         }
         Relationships: []
