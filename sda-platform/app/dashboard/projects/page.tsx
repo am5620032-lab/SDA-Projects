@@ -20,6 +20,7 @@ export default async function ProjectsPage() {
     <ProjectsCommandCenter
       initialProjects={'projects' in projectsResult ? projectsResult.projects : []}
       initialStats={'stats' in statsResult ? statsResult.stats : null}
+      canVerify={['admin_manager', 'it_manager'].includes(actorResult.actor.role)}
       initialError={([
         'error' in projectsResult ? projectsResult.error : '',
         'error' in statsResult ? statsResult.error : '',

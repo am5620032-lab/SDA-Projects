@@ -716,6 +716,9 @@ export interface AdminDatabase {
           required_intervention: string | null
           description: string | null
           created_at: string
+          is_verified: boolean
+          verified_by: string | null
+          verified_at: string | null
         }
         Insert: {
           id?: string
@@ -732,6 +735,9 @@ export interface AdminDatabase {
           required_intervention?: string | null
           description?: string | null
           created_at?: string
+          is_verified?: boolean
+          verified_by?: string | null
+          verified_at?: string | null
         }
         Update: {
           id?: string
@@ -748,6 +754,9 @@ export interface AdminDatabase {
           required_intervention?: string | null
           description?: string | null
           created_at?: string
+          is_verified?: boolean
+          verified_by?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }

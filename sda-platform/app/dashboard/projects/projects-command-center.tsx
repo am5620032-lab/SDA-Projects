@@ -31,6 +31,7 @@ import {
   createProject,
   getProjects,
   getProjectsStats,
+  verifyProject,
   type DevelopmentProject,
   type ProjectFilters,
   type ProjectInput,
@@ -96,6 +97,7 @@ function KpiCard({
   unit,
   icon: Icon,
   accent,
+  gradient,
   note,
 }: {
   label: string
@@ -103,10 +105,11 @@ function KpiCard({
   unit: string
   icon: typeof Building2
   accent: string
+  gradient: string
   note: string
 }) {
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl shadow-black/10">
+    <article className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-5 shadow-xl shadow-black/10`}>
       <div className={`absolute inset-y-0 right-0 w-1 ${accent}`} />
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -114,7 +117,7 @@ function KpiCard({
           <p className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl">{value}</p>
           <p className="mt-2 text-xs text-slate-500">{unit}</p>
         </div>
-        <span className="rounded-xl border border-white/10 bg-white/5 p-3 text-amber-300">
+        <span className="rounded-xl border border-white/10 bg-white/5 p-3">
           <Icon size={22} aria-hidden="true" />
         </span>
       </div>
@@ -126,10 +129,12 @@ function KpiCard({
 export default function ProjectsCommandCenter({
   initialProjects,
   initialStats,
+  canVerify,
   initialError,
 }: {
   initialProjects: DevelopmentProject[]
   initialStats: ProjectStats | null
+  canVerify: boolean
   initialError: string
 }) {
   const [projects, setProjects] = useState(initialProjects)
@@ -141,16 +146,21 @@ export default function ProjectsCommandCenter({
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState(initialError)
   const [successMessage, setSuccessMessage] = useState('')
+  const [verifyingProjectId, setVerifyingProjectId] = useState<string | null>(null)
 
   const sectorData = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const project of projects) counts.set(project.sector, (counts.get(project.sector) ?? 0) + 1)
+    for (const project of projects) {
+      if (project.is_verified) counts.set(project.sector, (counts.get(project.sector) ?? 0) + 1)
+    }
     return [...counts.entries()].map(([name, value]) => ({ name, value }))
   }, [projects])
 
   const municipalityData = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const project of projects) counts.set(project.municipality, (counts.get(project.municipality) ?? 0) + 1)
+    for (const project of projects) {
+      if (project.is_verified) counts.set(project.municipality, (counts.get(project.municipality) ?? 0) + 1)
+    }
     return [...counts.entries()]
       .map(([name, count]) => ({ name, projects: count }))
       .sort((first, second) => second.projects - first.projects)
@@ -209,6 +219,29 @@ export default function ProjectsCommandCenter({
       setErrorMessage(error instanceof Error ? error.message : 'تعذر إضافة المشروع.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  const handleVerifyProject = async (project: DevelopmentProject) => {
+    setVerifyingProjectId(project.id)
+    setErrorMessage('')
+    setSuccessMessage('')
+    try {
+      const result = await verifyProject(project.id)
+      if ('error' in result) {
+        setErrorMessage(result.error)
+        return
+      }
+
+      setProjects((current) => current.map((item) => item.id === project.id ? result.project : item))
+      const statsResult = await getProjectsStats()
+      if ('stats' in statsResult) setStats(statsResult.stats)
+      else setErrorMessage(statsResult.error)
+      setSuccessMessage(`تم توثيق بيانات المشروع ${project.project_code}.`)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'تعذر توثيق بيانات المشروع.')
+    } finally {
+      setVerifyingProjectId(null)
     }
   }
 
@@ -311,10 +344,10 @@ export default function ProjectsCommandCenter({
         )}
 
         <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="إجمالي المشاريع" value={formatNumber(stats.totalProjects)} unit="مشروع ضمن المحفظة الوطنية" icon={Building2} accent="bg-sky-400" note="محفظة التنمية والاستثمار" />
-          <KpiCard label="المساحات الزراعية" value={formatNumber(stats.agriculturalArea, 2)} unit="هكتار" icon={Sprout} accent="bg-lime-400" note="إجمالي المساحات المسجلة للقطاع الزراعي" />
-          <KpiCard label="مشاريع متوقفة" value={formatNumber(stats.stoppedProjects)} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" note="أولوية المعالجة وإعادة الإعمار" />
-          <KpiCard label="الميزانيات التقديرية" value={formatNumber(stats.totalBudget)} unit="دينار ليبي" icon={Banknote} accent="bg-amber-300" note="إجمالي الاحتياج المالي للمحفظة" />
+          <KpiCard label="إجمالي المشاريع الموثقة" value={formatNumber(stats.totalProjects)} unit="مشروع ضمن المحفظة الوطنية" icon={Building2} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
+          <KpiCard label="المساحات الزراعية الموثقة" value={formatNumber(stats.agriculturalArea, 2)} unit="هكتار" icon={Sprout} accent="bg-lime-400" gradient="from-lime-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
+          <KpiCard label="المشاريع المتوقفة الموثقة" value={formatNumber(stats.stoppedProjects)} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
+          <KpiCard label="ميزانيات المشاريع الموثقة" value={formatNumber(stats.totalBudget)} unit="دينار ليبي" icon={Banknote} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
         </section>
 
         <section aria-label="تحليل توزيع المحفظة" className="mb-6 grid gap-5 xl:grid-cols-2">
@@ -322,7 +355,7 @@ export default function ProjectsCommandCenter({
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">توزيع المشاريع على البلديات</h2>
-                <p className="mt-1 text-xs text-slate-500">أعلى 12 بلدية حسب عدد المشاريع</p>
+                <p className="mt-1 text-xs text-slate-500">توزيع المشاريع الموثقة حسب البلدية</p>
               </div>
               <MapPinned className="text-sky-300" size={21} aria-hidden="true" />
             </div>
@@ -345,7 +378,7 @@ export default function ProjectsCommandCenter({
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">توزيع القطاعات</h2>
-                <p className="mt-1 text-xs text-slate-500">تركيبة محفظة التنمية حسب القطاع</p>
+                <p className="mt-1 text-xs text-slate-500">توزيع المشاريع الموثقة حسب القطاع</p>
               </div>
               <Building2 className="text-amber-300" size={21} aria-hidden="true" />
             </div>
@@ -378,7 +411,7 @@ export default function ProjectsCommandCenter({
           </div>
           {busy && <div className="h-1 animate-pulse bg-gradient-to-l from-amber-300 via-sky-400 to-emerald-400" />}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-right text-sm">
+            <table className="w-full min-w-[1250px] text-right text-sm">
               <thead className="bg-slate-950/60 text-xs text-slate-400">
                 <tr>
                   <th className="px-4 py-4">المشروع</th>
@@ -388,6 +421,8 @@ export default function ProjectsCommandCenter({
                   <th className="px-4 py-4">المساحة</th>
                   <th className="px-4 py-4">الميزانية التقديرية</th>
                   <th className="px-4 py-4">مصدر التمويل</th>
+                  <th className="px-4 py-4">حالة البيانات</th>
+                  {canVerify && <th className="px-4 py-4">الإجراءات</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.06]">
@@ -411,6 +446,29 @@ export default function ProjectsCommandCenter({
                     <td className="px-4 py-4 tabular-nums text-slate-300">{formatNumber(Number(project.area_size) || 0, 2)} <span className="text-xs text-slate-500">هكتار</span></td>
                     <td className="px-4 py-4 tabular-nums font-semibold text-amber-200">{formatNumber(Number(project.estimated_budget) || 0)} <span className="text-xs font-normal text-slate-500">د.ل</span></td>
                     <td className="px-4 py-4 text-slate-400">{project.funding_source}</td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${project.is_verified ? 'bg-emerald-400/10 text-emerald-300' : 'bg-slate-400/10 text-slate-400'}`}>
+                        {project.is_verified && <Check size={13} aria-hidden="true" />}
+                        {project.is_verified ? 'موثق' : 'غير موثق'}
+                      </span>
+                    </td>
+                    {canVerify && (
+                      <td className="px-4 py-4">
+                        {!project.is_verified ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleVerifyProject(project)}
+                            disabled={verifyingProjectId === project.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200 transition hover:bg-emerald-400/20 disabled:cursor-wait disabled:opacity-50"
+                          >
+                            <Check size={14} aria-hidden="true" />
+                            {verifyingProjectId === project.id ? 'جارٍ التحقق...' : 'التحقق'}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-500">مكتمل</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

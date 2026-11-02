@@ -19,6 +19,9 @@ export interface DevelopmentProject {
   required_intervention: string | null
   description: string | null
   created_at: string
+  is_verified: boolean
+  verified_by: string | null
+  verified_at: string | null
 }
 
 export interface ProjectFilters {
@@ -71,23 +74,42 @@ function isValidChoice(value: string, choices: readonly string[]): boolean {
   return choices.some((choice) => choice === value)
 }
 
-async function fetchAllProjects() {
-  const context = await getAuthorizedAdminClient()
+async function getProjectManagerContext() {
+  const actorResult = await getAuthenticatedActor()
+  if ('error' in actorResult) return actorResult
+  if (!['admin_manager', 'it_manager'].includes(actorResult.actor.role)) {
+    return { error: 'يقتصر التحقق الميداني على مديري النظام.' }
+  }
+  const adminResult = createSupabaseAdminClient()
+  if ('error' in adminResult) return adminResult
+  return { actor: actorResult.actor, client: adminResult.client }
+}
+
+export async function verifyProject(
+  projectId: string,
+): Promise<{ success: true; project: DevelopmentProject } | { error: string }> {
+  if (typeof projectId !== 'string'
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) {
+    return { error: 'معرّف المشروع غير صالح.' }
+  }
+
+  const context = await getProjectManagerContext()
   if ('error' in context) return context
 
-  const projects: DevelopmentProject[] = []
-  for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await context.client
-      .from('development_projects')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .order('id')
-      .range(offset, offset + 999)
-    if (error) return { error: `تعذر جلب المشاريع: ${error.message}` }
-    projects.push(...(data ?? []))
-    if (!data || data.length < 1000) break
-  }
-  return { projects }
+  const { data, error } = await context.client
+    .from('development_projects')
+    .update({
+      is_verified: true,
+      verified_by: context.actor.id,
+      verified_at: new Date().toISOString(),
+    })
+    .eq('id', projectId)
+    .select('*')
+    .single()
+
+  if (error) return { error: `تعذر توثيق المشروع: ${error.message}` }
+  revalidatePath('/dashboard/projects')
+  return { success: true, project: data }
 }
 
 export async function createProject(
@@ -180,14 +202,26 @@ export async function getProjects(
 export async function getProjectsStats(): Promise<
   { stats: ProjectStats } | { error: string }
 > {
-  const result = await fetchAllProjects()
-  if ('error' in result) return result
-  const stats = result.projects.reduce<ProjectStats>((total, project) => {
-    total.totalProjects += 1
-    if (project.sector === 'زراعة') total.agriculturalArea += Number(project.area_size) || 0
-    if (project.status === 'متوقف') total.stoppedProjects += 1
-    total.totalBudget += Number(project.estimated_budget) || 0
-    return total
-  }, { ...emptyStats })
+  const context = await getAuthorizedAdminClient()
+  if ('error' in context) return context
+
+  const stats: ProjectStats = { ...emptyStats }
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await context.client
+      .from('development_projects')
+      .select('sector, area_size, estimated_budget, status')
+      .eq('is_verified', true)
+      .order('id')
+      .range(offset, offset + 999)
+    if (error) return { error: `تعذر جلب إحصاءات المشاريع الموثقة: ${error.message}` }
+
+    for (const project of data ?? []) {
+      stats.totalProjects += 1
+      if (project.sector === 'زراعة') stats.agriculturalArea += Number(project.area_size) || 0
+      if (project.status === 'متوقف') stats.stoppedProjects += 1
+      stats.totalBudget += Number(project.estimated_budget) || 0
+    }
+    if (!data || data.length < 1000) break
+  }
   return { stats }
 }
