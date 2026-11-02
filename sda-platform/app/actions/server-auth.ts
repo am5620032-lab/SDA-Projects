@@ -700,11 +700,93 @@ export interface AdminDatabase {
         }
         Relationships: []
       }
+      development_projects: {
+        Row: {
+          id: string
+          project_code: string
+          project_name: string
+          sector: string
+          municipality: string
+          location_details: string | null
+          area_size: number
+          estimated_budget: number
+          funding_source: string
+          priority_level: string
+          status: string
+          required_intervention: string | null
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_code: string
+          project_name: string
+          sector: string
+          municipality: string
+          location_details?: string | null
+          area_size?: number
+          estimated_budget?: number
+          funding_source: string
+          priority_level: string
+          status?: string
+          required_intervention?: string | null
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_code?: string
+          project_name?: string
+          sector?: string
+          municipality?: string
+          location_details?: string | null
+          area_size?: number
+          estimated_budget?: number
+          funding_source?: string
+          priority_level?: string
+          status?: string
+          required_intervention?: string | null
+          description?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      project_attachments: {
+        Row: {
+          id: string
+          project_id: string
+          file_url: string
+          file_name: string
+          attachment_type: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          file_url: string
+          file_name: string
+          attachment_type: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          file_url?: string
+          file_name?: string
+          attachment_type?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
       next_archive_document_number: {
         Args: { p_document_type: string; p_document_year: number }
+        Returns: string
+      }
+      next_development_project_code: {
+        Args: { p_year: number }
         Returns: string
       }
     }

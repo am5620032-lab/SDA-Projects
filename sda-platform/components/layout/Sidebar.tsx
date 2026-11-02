@@ -2,6 +2,7 @@
 
 import {
   ArrowLeftRight,
+  Building2,
   CalendarCheck2,
   CalendarDays,
   ChevronDown,
@@ -72,6 +73,7 @@ export default function Sidebar({
     hasHrAccess && pathname.startsWith('/dashboard/employees')
   ))
   const canManageModules = userRole === 'it_manager' || userRole === 'admin_manager'
+  const canAccessProjects = ['president', 'vice_president', 'it_manager', 'admin_manager'].includes(userRole)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -160,6 +162,13 @@ export default function Sidebar({
             </NavigationLink>
           </nav>
         </section>
+      )}
+
+      {canAccessProjects && (
+        <NavigationLink href="/dashboard/projects" onClick={closeMobileMenu}>
+          <Building2 size={18} className="text-amber-600" aria-hidden="true" />
+          المشروعات والاستثمار
+        </NavigationLink>
       )}
 
       <form action={logoutFromPlatform} className="pt-2">
