@@ -13,6 +13,7 @@ export interface PromotionEligibleEmployee {
   hire_date: string | null
   last_promotion_date: string | null
   eligible_since: string
+  latest_evaluation_score: number | null
 }
 
 export async function getPromotionEligibleEmployees(): Promise<
@@ -41,10 +42,33 @@ export async function getPromotionEligibleEmployees(): Promise<
       hire_date: employee.hire_date,
       last_promotion_date: employee.last_promotion_date,
       eligible_since: eligibleSince,
+      latest_evaluation_score: null,
     }]
   })
 
-  return { data: eligible }
+  if (eligible.length === 0) return { data: eligible }
+
+  const eligibleIds = eligible.map((employee) => employee.id)
+  const latestScores = new Map<string, number>()
+  for (let index = 0; index < eligibleIds.length; index += 500) {
+    const { data: evaluations, error: evaluationError } = await adminResult.client.from('evaluations')
+      .select('employee_id, year, score, created_at')
+      .eq('status', 'approved')
+      .in('employee_id', eligibleIds.slice(index, index + 500))
+      .order('year', { ascending: false })
+      .order('created_at', { ascending: false })
+    if (evaluationError) return { error: `تعذر جلب درجات التقييم للمستحقين: ${evaluationError.message}` }
+    for (const evaluation of evaluations ?? []) {
+      if (!latestScores.has(evaluation.employee_id)) latestScores.set(evaluation.employee_id, evaluation.score)
+    }
+  }
+
+  return {
+    data: eligible.map((employee) => ({
+      ...employee,
+      latest_evaluation_score: latestScores.get(employee.id) ?? null,
+    })),
+  }
 }
 
 async function getAllPages<T>(load: (from: number, to: number) => PromiseLike<{

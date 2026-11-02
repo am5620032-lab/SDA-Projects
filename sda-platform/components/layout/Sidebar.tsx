@@ -5,13 +5,17 @@ import {
   CalendarCheck2,
   CalendarDays,
   ChevronDown,
+  ClipboardCheck,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   KeyRound,
   LogOut,
+  Mail,
   Menu,
   Network,
   Package,
+  Scale,
   ShieldCheck,
   UsersRound,
   X,
@@ -112,6 +116,11 @@ export default function Sidebar({
             <NavigationLink href="/dashboard/employees/archive" onClick={closeMobileMenu}><FileText size={16} aria-hidden="true" />أرشيف ملفات الموظفين</NavigationLink>
             <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
             <NavigationLink href="/dashboard/employees/assets" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
+            <NavigationLink href="/dashboard/employees/penalties" onClick={closeMobileMenu}><Scale size={16} aria-hidden="true" />الجزاءات والمخالفات</NavigationLink>
+            <NavigationLink href="/dashboard/employees/trainings" onClick={closeMobileMenu}><GraduationCap size={16} aria-hidden="true" />التدريب والتطوير</NavigationLink>
+            <NavigationLink href="/dashboard/employees/evaluations" onClick={closeMobileMenu}><ClipboardCheck size={16} aria-hidden="true" />تقييم الأداء</NavigationLink>
+            <NavigationLink href="/dashboard/employees/clearances" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />إخلاء الطرف</NavigationLink>
+            <NavigationLink href="/dashboard/employees/correspondences" onClick={closeMobileMenu}><Mail size={16} aria-hidden="true" />المراسلات الإدارية</NavigationLink>
           </nav>
         )}
       </section>

@@ -418,6 +418,171 @@ export interface AdminDatabase {
         }
         Relationships: []
       }
+      penalties: {
+        Row: {
+          id: string
+          employee_id: string
+          violation_type: string
+          description: string
+          decision_number: string
+          decision_date: string
+          penalty_type: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          violation_type: string
+          description: string
+          decision_number: string
+          decision_date: string
+          penalty_type: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          violation_type?: string
+          description?: string
+          decision_number?: string
+          decision_date?: string
+          penalty_type?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      trainings: {
+        Row: {
+          id: string
+          employee_id: string
+          course_name: string
+          provider: string | null
+          start_date: string
+          end_date: string | null
+          certificate_url: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          course_name: string
+          provider?: string | null
+          start_date: string
+          end_date?: string | null
+          certificate_url?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          course_name?: string
+          provider?: string | null
+          start_date?: string
+          end_date?: string | null
+          certificate_url?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      evaluations: {
+        Row: {
+          id: string
+          employee_id: string
+          year: number
+          evaluator_id: string | null
+          score: number
+          notes: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          year: number
+          evaluator_id?: string | null
+          score: number
+          notes?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          year?: number
+          evaluator_id?: string | null
+          score?: number
+          notes?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      clearances: {
+        Row: {
+          id: string
+          employee_id: string
+          request_date: string
+          status: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          request_date?: string
+          status?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          request_date?: string
+          status?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      correspondences: {
+        Row: {
+          id: string
+          type: string
+          reference_number: string
+          subject: string
+          date: string
+          related_employee_id: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          type: string
+          reference_number: string
+          subject: string
+          date: string
+          related_employee_id?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          reference_number?: string
+          subject?: string
+          date?: string
+          related_employee_id?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           id: string

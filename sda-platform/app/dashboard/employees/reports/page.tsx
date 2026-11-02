@@ -112,7 +112,7 @@ export default function EmployeesReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-right text-sm">
                 <thead className="bg-amber-50 text-gray-700">
-                  <tr><th className="p-3">الموظف</th><th className="p-3">المسمى الوظيفي</th><th className="p-3">تاريخ التعيين</th><th className="p-3">آخر ترقية</th><th className="p-3">تاريخ الاستحقاق</th></tr>
+                  <tr><th className="p-3">الموظف</th><th className="p-3">المسمى الوظيفي</th><th className="p-3">تاريخ التعيين</th><th className="p-3">آخر ترقية</th><th className="p-3">تاريخ الاستحقاق</th><th className="p-3">آخر تقييم معتمد</th></tr>
                 </thead>
                 <tbody>{eligibleEmployees.map((employee) => (
                   <tr key={employee.id} className="border-t">
@@ -121,6 +121,7 @@ export default function EmployeesReportsPage() {
                     <td className="p-3">{employee.hire_date || '—'}</td>
                     <td className="p-3">{employee.last_promotion_date || 'لا توجد ترقية سابقة'}</td>
                     <td className="p-3">{employee.eligible_since}</td>
+                    <td className="p-3">{employee.latest_evaluation_score === null ? 'لا يوجد تقييم معتمد' : `${employee.latest_evaluation_score} / 100`}</td>
                   </tr>
                 ))}</tbody>
               </table>

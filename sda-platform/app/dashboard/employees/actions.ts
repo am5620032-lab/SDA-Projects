@@ -63,6 +63,8 @@ export interface EmployeesDashboardData {
   onLeaveCount: number
   delegatedCount: number
   unreturnedAssetsCount: number
+  pendingClearanceCount: number
+  terminatedUnreturnedAssetsCount: number
   promotionEligibleEmployees: { id: string; full_name: string; eligible_since: string }[]
 }
 
@@ -93,6 +95,8 @@ export async function getEmployeesDashboardData(): Promise<DashboardResult> {
       pendingLeavesResult,
       onLeaveCountResult,
       assetCountResult,
+      pendingClearanceCountResult,
+      terminatedEmployeesResult,
     ] = await Promise.all([
       adminResult.client.from('employees')
         .select('id, full_name, national_id, employee_number, work_start_date, birth_date, birth_place, nationality, social_status, gender, qualification, major, university, hire_date, job_title, department, grade, category, rank, last_promotion_date, basic_salary, variable_salary, phone, email, address, employment_status, delegation_entity, branch, job_type, notes, photo_url, delegation_start_date, delegation_end_date, department_id, direct_manager_id, created_at')
@@ -115,6 +119,12 @@ export async function getEmployeesDashboardData(): Promise<DashboardResult> {
       adminResult.client.from('assets')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'assigned'),
+      adminResult.client.from('clearances')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending'),
+      adminResult.client.from('employees')
+        .select('id')
+        .in('employment_status', ['terminated', 'resigned']),
     ])
 
     if (employeesResult.error) return { error: `تعذر تحميل بيانات الموظفين: ${employeesResult.error.message}` }
@@ -124,12 +134,25 @@ export async function getEmployeesDashboardData(): Promise<DashboardResult> {
     if (pendingLeavesResult.error) return { error: `تعذر تحميل طلبات الإجازة: ${pendingLeavesResult.error.message}` }
     if (onLeaveCountResult.error) return { error: `تعذر إحصاء الموظفين في إجازة: ${onLeaveCountResult.error.message}` }
     if (assetCountResult.error) return { error: `تعذر إحصاء العهد غير المعادة: ${assetCountResult.error.message}` }
+    if (pendingClearanceCountResult.error) return { error: `تعذر إحصاء طلبات إخلاء الطرف: ${pendingClearanceCountResult.error.message}` }
+    if (terminatedEmployeesResult.error) return { error: `تعذر جلب الموظفين المنتهية خدمتهم: ${terminatedEmployeesResult.error.message}` }
 
     const employeeRows = employeesResult.data ?? []
     const departmentRows = departmentsResult.data ?? []
     const employeeById = new Map(employeeRows.map((employee) => [employee.id, employee]))
     const departmentById = new Map(departmentRows.map((department) => [department.id, department]))
     const today = new Date().toISOString().slice(0, 10)
+    const terminatedEmployeeIds = (terminatedEmployeesResult.data ?? []).map((employee) => employee.id)
+    let terminatedUnreturnedAssetsCount = 0
+    for (let index = 0; index < terminatedEmployeeIds.length; index += 500) {
+      const { count, error } = await adminResult.client.from('assets')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'assigned')
+        .in('employee_id', terminatedEmployeeIds.slice(index, index + 500))
+      if (error) return { error: `تعذر إحصاء عهد الموظفين المنتهية خدمتهم: ${error.message}` }
+      terminatedUnreturnedAssetsCount += count ?? 0
+    }
+
     const promotionEligibleEmployees = employeeRows.flatMap((employee) => {
       if (employee.employment_status === 'terminated') return []
       const eligibleSince = getPromotionEligibilityDate(employee.hire_date, employee.last_promotion_date, today)
@@ -201,6 +224,8 @@ export async function getEmployeesDashboardData(): Promise<DashboardResult> {
         onLeaveCount: onLeaveCountResult.count ?? 0,
         delegatedCount: employeeRows.filter((employee) => ['delegated', 'seconded'].includes(employee.employment_status ?? '')).length,
         unreturnedAssetsCount: assetCountResult.count ?? 0,
+        pendingClearanceCount: pendingClearanceCountResult.count ?? 0,
+        terminatedUnreturnedAssetsCount,
         promotionEligibleEmployees,
       },
     }

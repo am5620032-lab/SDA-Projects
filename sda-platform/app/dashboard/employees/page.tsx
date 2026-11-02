@@ -21,6 +21,8 @@ export default function EmployeesPage() {
   const [onLeaveCount, setOnLeaveCount] = useState<number | null>(null)
   const [delegatedCount, setDelegatedCount] = useState<number | null>(null)
   const [unreturnedAssetsCount, setUnreturnedAssetsCount] = useState<number | null>(null)
+  const [pendingClearanceCount, setPendingClearanceCount] = useState<number | null>(null)
+  const [terminatedUnreturnedAssetsCount, setTerminatedUnreturnedAssetsCount] = useState<number | null>(null)
   const [promotionEligibleEmployees, setPromotionEligibleEmployees] = useState<
     { id: string; full_name: string; eligible_since: string }[]
   >([])
@@ -68,6 +70,8 @@ export default function EmployeesPage() {
       setOnLeaveCount(dashboard.onLeaveCount)
       setDelegatedCount(dashboard.delegatedCount)
       setUnreturnedAssetsCount(dashboard.unreturnedAssetsCount)
+      setPendingClearanceCount(dashboard.pendingClearanceCount)
+      setTerminatedUnreturnedAssetsCount(dashboard.terminatedUnreturnedAssetsCount)
       setPromotionEligibleEmployees(dashboard.promotionEligibleEmployees)
 
       const counts = new Map<string, number>([
@@ -95,6 +99,8 @@ export default function EmployeesPage() {
       setOnLeaveCount(0)
       setDelegatedCount(0)
       setUnreturnedAssetsCount(0)
+      setPendingClearanceCount(0)
+      setTerminatedUnreturnedAssetsCount(0)
       setPromotionEligibleEmployees([])
       setPendingLeaveCount(0)
       setBranchCounts([])
@@ -563,6 +569,12 @@ export default function EmployeesPage() {
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <Link href="/dashboard/employees/assets" className="rounded-lg border bg-red-50 p-4 text-sm font-semibold text-red-800 hover:bg-red-100">
               عهد تحتاج إلى متابعة: {unreturnedAssetsCount ?? '—'}
+            </Link>
+            <Link href="/dashboard/employees/clearances" className="rounded-lg border bg-emerald-50 p-4 text-sm font-semibold text-emerald-800 hover:bg-emerald-100">
+              طلبات إخلاء الطرف المعلقة: {pendingClearanceCount ?? '—'}
+            </Link>
+            <Link href="/dashboard/employees/assets" className="rounded-lg border bg-orange-50 p-4 text-sm font-semibold text-orange-800 hover:bg-orange-100">
+              عهد غير معادة لموظفين منتهية خدمتهم: {terminatedUnreturnedAssetsCount ?? '—'}
             </Link>
             <Link href="/dashboard/employees/reports" className="rounded-lg border bg-amber-50 p-4 text-sm font-semibold text-amber-800 hover:bg-amber-100">
               موظفون مستحقون للترقية وفق معيار 4 سنوات: {promotionEligibleEmployees.length}
