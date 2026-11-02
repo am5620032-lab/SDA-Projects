@@ -56,7 +56,7 @@ export async function getDepartments(): Promise<{ data: DepartmentWithManager[] 
       const manager = department.manager_id ? employeeById.get(department.manager_id) : undefined
       return {
         ...department,
-        ...(manager ? { manager: { full_name: manager.full_name } } : {}),
+        manager: manager ? { full_name: manager.full_name } : undefined,
         employees_count: employeesByDepartment.get(department.id)?.length ?? 0,
       }
     }),

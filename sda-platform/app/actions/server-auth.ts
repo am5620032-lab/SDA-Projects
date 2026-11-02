@@ -106,6 +106,7 @@ export interface AdminDatabase {
           notes: string | null
           photo_url: string | null
           delegation_start_date: string | null
+          delegation_end_date: string | null
           leave_balance: number | null
           department_id: string | null
           direct_manager_id: string | null
@@ -118,6 +119,8 @@ export interface AdminDatabase {
           national_id?: string | null
           job_title?: string | null
           department?: string | null
+          delegation_start_date?: string | null
+          delegation_end_date?: string | null
           leave_balance?: number | null
           department_id?: string | null
           direct_manager_id?: string | null
@@ -148,6 +151,7 @@ export interface AdminDatabase {
           notes?: string | null
           photo_url?: string | null
           delegation_start_date?: string | null
+          delegation_end_date?: string | null
           leave_balance?: number | null
           department_id?: string | null
           direct_manager_id?: string | null

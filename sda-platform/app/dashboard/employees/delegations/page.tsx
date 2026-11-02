@@ -1,31 +1,30 @@
 'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { getDelegations, type DelegatedEmployee } from './actions'
 
-interface DelegatedEmployee {
-  id: string
-  full_name: string
-  employee_number: string | null
-  job_title: string | null
-  department: string | null
-  branch: string | null
-  employment_status: 'delegated' | 'seconded'
-  delegation_entity: string | null
-  delegation_start_date: string | null
-  phone: string | null
+function parseDate(date: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  const timestamp = Date.parse(`${date}T00:00:00Z`)
+  if (Number.isNaN(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== date) return null
+  return timestamp
 }
 
-function getDelegationDurationDays(startDate: string | null): number | null {
+function getDelegationDurationDays(
+  startDate: string | null,
+  endDate: string | null,
+): number | null {
   if (!startDate) return null
 
-  const startTimestamp = Date.parse(`${startDate}T00:00:00Z`)
-  if (Number.isNaN(startTimestamp)) return null
+  const startTimestamp = parseDate(startDate)
+  if (startTimestamp === null) return null
 
   const today = new Date()
-  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
-  return Math.max(0, Math.floor((todayUtc - startTimestamp) / 86_400_000) + 1)
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+  const endTimestamp = endDate ? parseDate(endDate) : todayUtc
+  if (endTimestamp === null || endTimestamp < startTimestamp) return null
+
+  return Math.floor((endTimestamp - startTimestamp) / 86_400_000) + 1
 }
 
 function formatDelegationDuration(days: number): string {
@@ -43,33 +42,19 @@ export default function DelegationsPage() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
 
   const fetchDelegations = useCallback(async () => {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError) throw authError
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('employees')
-        .select('id, full_name, employee_number, job_title, department, branch, employment_status, delegation_entity, delegation_start_date, phone')
-        .in('employment_status', ['delegated', 'seconded'])
-        .order('full_name')
-      if (error) throw error
-
-      setEmployees(data ?? [])
+      const result = await getDelegations()
+      if ('error' in result) throw new Error(result.error)
+      setEmployees(result.data)
       setErrorMessage('')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'تعذر تحميل بيانات الندب والإعارة.')
     } finally {
       setLoading(false)
     }
-  }, [router, supabase])
+  }, [])
 
   useEffect(() => { void Promise.resolve().then(fetchDelegations) }, [fetchDelegations])
 
@@ -126,7 +111,10 @@ export default function DelegationsPage() {
                 </thead>
                 <tbody>
                   {filteredEmployees.map((employee) => {
-                    const durationDays = getDelegationDurationDays(employee.delegation_start_date)
+                    const durationDays = getDelegationDurationDays(
+                      employee.delegation_start_date,
+                      employee.delegation_end_date,
+                    )
                     return (
                       <tr key={employee.id} className="border-b hover:bg-gray-50">
                         <td className="p-3">
@@ -141,7 +129,9 @@ export default function DelegationsPage() {
                         <td className="p-3">{employee.job_title || '-'} / {employee.department || '-'}</td>
                         <td className="p-3">{employee.delegation_entity || '-'}</td>
                         <td className="p-3">{employee.delegation_start_date || '-'}</td>
-                        <td className="p-3">{durationDays === null ? 'غير محدد' : formatDelegationDuration(durationDays)}</td>
+                        <td className="p-3">
+                          {durationDays === null ? 'غير محدد' : `(${formatDelegationDuration(durationDays)})`}
+                        </td>
                         <td className="p-3">{employee.branch || 'الإدارة الرئيسيه / طرابلس'}</td>
                         <td className="p-3" dir="ltr">{employee.phone || '-'}</td>
                       </tr>
