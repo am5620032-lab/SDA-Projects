@@ -17,6 +17,7 @@ import {
   type ArchiveEmployeeOption,
   type ArchiveUploadedDocument,
 } from './actions'
+import type { ArchiveDepartmentOption } from './archive-departments'
 
 interface ArchiveData {
   documents: ArchiveDocument[]
@@ -78,9 +79,11 @@ function ArchiveHeader() {
 export default function ArchiveClient({
   initialData,
   initialError,
+  departments,
 }: {
   initialData: ArchiveData | null
   initialError: string
+  departments: ArchiveDepartmentOption[]
 }) {
   const [data, setData] = useState<ArchiveData | null>(initialData)
   const [query, setQuery] = useState('')
@@ -126,8 +129,8 @@ export default function ArchiveClient({
       const documentType = form.querySelector<HTMLSelectElement>('select[name="document_type"]')?.value
       const classificationValue = form.querySelector<HTMLSelectElement>('select[name="classification"]')?.value
       const employeeId = form.querySelector<HTMLSelectElement>('select[name="employee_id"]')?.value
-      const sourceEntity = form.querySelector<HTMLInputElement>('input[name="source_entity"]')?.value.trim()
-      const destinationEntity = form.querySelector<HTMLInputElement>('input[name="destination_entity"]')?.value.trim()
+      const sourceEntity = form.querySelector<HTMLSelectElement>('select[name="source_entity"]')?.value
+      const destinationEntity = form.querySelector<HTMLSelectElement>('select[name="destination_entity"]')?.value
       const externalReference = form.querySelector<HTMLInputElement>('input[name="external_reference"]')?.value.trim()
       const documentDate = form.querySelector<HTMLInputElement>('input[name="document_date"]')?.value
       if (!files.length || !documentType || !classificationValue) {
@@ -410,11 +413,27 @@ export default function ArchiveClient({
                       {classifications.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   </label>
-                  <label className="block text-sm font-semibold">الجهة المصدرة (من أين)
-                    <input name="source_entity" type="text" required maxLength={255} className="mt-1 w-full rounded-lg border px-3 py-2.5" />
+                  <label className="block text-sm font-semibold">الإدارة/المكتب المصدر
+                    <select name="source_entity" required defaultValue="" className="mt-1 w-full rounded-lg border px-3 py-2.5">
+                      <option value="" disabled>اختر الإدارة أو المكتب المصدر</option>
+                      <option value="جهة خارجية">جهة خارجية</option>
+                      {departments.map((department) => (
+                        <option key={department.id} value={department.name}>
+                          {department.name} - {department.type}
+                        </option>
+                      ))}
+                    </select>
                   </label>
-                  <label className="block text-sm font-semibold">الجهة الموجه إليها (إلى أين)
-                    <input name="destination_entity" type="text" required maxLength={255} className="mt-1 w-full rounded-lg border px-3 py-2.5" />
+                  <label className="block text-sm font-semibold">الإدارة/المكتب الموجه إليه
+                    <select name="destination_entity" required defaultValue="" className="mt-1 w-full rounded-lg border px-3 py-2.5">
+                      <option value="" disabled>اختر الإدارة أو المكتب الموجه إليه</option>
+                      <option value="جهة خارجية">جهة خارجية</option>
+                      {departments.map((department) => (
+                        <option key={department.id} value={department.name}>
+                          {department.name} - {department.type}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="block text-sm font-semibold">رقم الصادر/الوارد الخارجي (اختياري)
                     <input name="external_reference" type="text" maxLength={100} className="mt-1 w-full rounded-lg border px-3 py-2.5" />

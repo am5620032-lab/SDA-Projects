@@ -199,7 +199,18 @@ export async function uploadArchiveDocument(formData: FormData): Promise<{
     : null
   const documentDate = typeof documentDateValue === 'string' ? documentDateValue.trim() || null : null
   if (!sourceEntity || !destinationEntity || sourceEntity.length > 255 || destinationEntity.length > 255) {
-    return { error: 'يرجى إدخال الجهة المصدرة والجهة الموجه إليها بحد أقصى 255 حرفاً.' }
+    return { error: 'يرجى اختيار الإدارة/المكتب المصدر والجهة الموجه إليها.' }
+  }
+  const { data: departments, error: departmentsError } = await context.client
+    .from('departments')
+    .select('name')
+  if (departmentsError) return { error: `تعذر التحقق من الإدارة/المكتب: ${departmentsError.message}` }
+  const departmentNames = new Set((departments ?? []).map((department) => department.name))
+  if (
+    (sourceEntity !== 'جهة خارجية' && !departmentNames.has(sourceEntity))
+    || (destinationEntity !== 'جهة خارجية' && !departmentNames.has(destinationEntity))
+  ) {
+    return { error: 'اختر المصدر والوجهة من الإدارات المسجلة أو «جهة خارجية».' }
   }
   if (externalReference && externalReference.length > 100) {
     return { error: 'رقم الصادر/الوارد الخارجي يجب ألا يتجاوز 100 حرف.' }
