@@ -3,15 +3,18 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import {
   Activity,
+  ArrowUpRight,
   Banknote,
   Building2,
   Check,
   ChevronLeft,
+  Clock3,
   CircleAlert,
   FilePlus2,
   MapPinned,
   PauseCircle,
   Sprout,
+  TriangleAlert,
   X,
 } from 'lucide-react'
 import {
@@ -44,12 +47,12 @@ const municipalities = [
   'الجفرة', 'القطرون', 'تراغن', 'تازربو', 'الكفرة', 'ربيانة', 'العوينات',
 ]
 
-const sectorsColors: Record<string, string> = {
-  زراعة: '#84cc16',
-  تعليم: '#38bdf8',
-  صحة: '#f472b6',
-  'بنية تحتية': '#fbbf24',
-  إعمار: '#fb7185',
+const statusColors: Record<string, string> = {
+  منجز: '#34d399',
+  'قيد التنفيذ': '#38bdf8',
+  متوقف: '#fb7185',
+  'قيد الدراسة': '#a78bfa',
+  مقترح: '#94a3b8',
 }
 
 const priorityClasses: Record<string, string> = {
@@ -72,6 +75,11 @@ const emptyStats: ProjectStats = {
   agriculturalArea: 0,
   stoppedProjects: 0,
   totalBudget: 0,
+  projectsByStatus: projectStatuses.map((status) => ({ status, count: 0 })),
+  budgetBySector: projectSectors.map((sector) => ({ sector, budget: 0 })),
+  municipalitiesRanked: [],
+  latestProjects: [],
+  urgentProjects: [],
 }
 
 const initialForm: ProjectInput = {
@@ -86,6 +94,7 @@ const initialForm: ProjectInput = {
   status: 'مقترح',
   required_intervention: '',
   description: '',
+  completion_percentage: 0,
 }
 
 const formatNumber = (value: number, maximumFractionDigits = 0) =>
@@ -147,25 +156,6 @@ export default function ProjectsCommandCenter({
   const [errorMessage, setErrorMessage] = useState(initialError)
   const [successMessage, setSuccessMessage] = useState('')
   const [verifyingProjectId, setVerifyingProjectId] = useState<string | null>(null)
-
-  const sectorData = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const project of projects) {
-      if (project.is_verified) counts.set(project.sector, (counts.get(project.sector) ?? 0) + 1)
-    }
-    return [...counts.entries()].map(([name, value]) => ({ name, value }))
-  }, [projects])
-
-  const municipalityData = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const project of projects) {
-      if (project.is_verified) counts.set(project.municipality, (counts.get(project.municipality) ?? 0) + 1)
-    }
-    return [...counts.entries()]
-      .map(([name, count]) => ({ name, projects: count }))
-      .sort((first, second) => second.projects - first.projects)
-      .slice(0, 12)
-  }, [projects])
 
   const municipalityOptions = useMemo(() => {
     const values = new Set([...municipalities, ...initialProjects.map((project) => project.municipality)])
@@ -350,50 +340,167 @@ export default function ProjectsCommandCenter({
           <KpiCard label="ميزانيات المشاريع الموثقة" value={formatNumber(stats.totalBudget)} unit="دينار ليبي" icon={Banknote} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900 to-slate-900" note="بيانات محققة ميدانياً" />
         </section>
 
-        <section aria-label="تحليل توزيع المحفظة" className="mb-6 grid gap-5 xl:grid-cols-2">
+        <section aria-label="التحليل التنفيذي للمحفظة" className="mb-6 grid gap-5 xl:grid-cols-2">
           <article className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl shadow-black/10 md:p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold">توزيع المشاريع على البلديات</h2>
-                <p className="mt-1 text-xs text-slate-500">توزيع المشاريع الموثقة حسب البلدية</p>
+                <h2 className="text-lg font-bold">مؤشر الإنجاز حسب الحالة</h2>
+                <p className="mt-1 text-xs text-slate-500">توزيع المشاريع الموثقة في المحفظة</p>
               </div>
-              <MapPinned className="text-sky-300" size={21} aria-hidden="true" />
+              <Check className="text-emerald-300" size={21} aria-hidden="true" />
             </div>
             <div className="h-72">
-              {municipalityData.length ? (
+              {stats.totalProjects ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={municipalityData} margin={{ top: 5, right: 6, left: -18, bottom: 5 }}>
-                    <CartesianGrid stroke="#ffffff12" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <PieChart>
+                    <Pie
+                      data={stats.projectsByStatus}
+                      dataKey="count"
+                      nameKey="status"
+                      cx="50%"
+                      cy="46%"
+                      innerRadius={62}
+                      outerRadius={100}
+                      paddingAngle={4}
+                      stroke="rgba(255,255,255,0.12)"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {stats.projectsByStatus.map((entry) => (
+                        <Cell
+                          key={entry.status}
+                          fill={statusColors[entry.status] ?? '#94a3b8'}
+                        />
+                      ))}
+                    </Pie>
                     <Tooltip contentStyle={{ background: '#0f1d2b', border: '1px solid #334155', borderRadius: 12, color: '#fff' }} />
-                    <Bar dataKey="projects" name="عدد المشاريع" fill="#38bdf8" radius={[6, 6, 0, 0]} maxBarSize={44} />
-                  </BarChart>
+                    <Legend verticalAlign="bottom" height={32} formatter={(value: string) => <span className="text-xs text-slate-300">{value}</span>} />
+                  </PieChart>
                 </ResponsiveContainer>
-              ) : <div className="flex h-full items-center justify-center text-sm text-slate-500">لا توجد بيانات بلديات بعد.</div>}
+              ) : <div className="flex h-full items-center justify-center text-sm text-slate-500">لا توجد مشاريع موثقة لعرض توزيع الحالات.</div>}
             </div>
           </article>
 
           <article className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl shadow-black/10 md:p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold">توزيع القطاعات</h2>
-                <p className="mt-1 text-xs text-slate-500">توزيع المشاريع الموثقة حسب القطاع</p>
+                <h2 className="text-lg font-bold">الميزانيات حسب القطاع</h2>
+                <p className="mt-1 text-xs text-slate-500">القيم التقديرية للمشاريع الموثقة · دينار ليبي</p>
               </div>
-              <Building2 className="text-amber-300" size={21} aria-hidden="true" />
+              <Banknote className="text-amber-300" size={21} aria-hidden="true" />
             </div>
             <div className="h-72">
-              {sectorData.length ? (
+              {stats.budgetBySector.some((entry) => entry.budget > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={sectorData} dataKey="value" nameKey="name" cx="50%" cy="48%" innerRadius={62} outerRadius={100} paddingAngle={3} stroke="none">
-                      {sectorData.map((entry) => <Cell key={entry.name} fill={sectorsColors[entry.name] ?? '#94a3b8'} />)}
-                    </Pie>
+                  <BarChart data={stats.budgetBySector} margin={{ top: 12, right: 5, left: -8, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="sectorBudgetGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#67e8f9" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.45} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="#ffffff12" vertical={false} />
+                    <XAxis dataKey="sector" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value: number) => formatNumber(value)} />
                     <Tooltip contentStyle={{ background: '#0f1d2b', border: '1px solid #334155', borderRadius: 12, color: '#fff' }} />
-                    <Legend verticalAlign="bottom" height={36} formatter={(value: string) => <span className="text-xs text-slate-300">{value}</span>} />
-                  </PieChart>
+                    <Bar dataKey="budget" name="الميزانية التقديرية" fill="url(#sectorBudgetGradient)" radius={[6, 6, 0, 0]} maxBarSize={46} />
+                  </BarChart>
                 </ResponsiveContainer>
-              ) : <div className="flex h-full items-center justify-center text-sm text-slate-500">لا توجد بيانات قطاعات بعد.</div>}
+              ) : <div className="flex h-full items-center justify-center text-sm text-slate-500">لا توجد ميزانيات موثقة لعرضها.</div>}
+            </div>
+          </article>
+        </section>
+
+        <section aria-label="القوائم التحليلية" className="mb-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <article className="rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+            <header className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-white">ترتيب البلديات</h2>
+                <p className="mt-1 text-xs text-slate-500">حصة المشاريع الموثقة من الإجمالي</p>
+              </div>
+              <MapPinned className="text-sky-300" size={20} aria-hidden="true" />
+            </header>
+            <div className="space-y-4">
+              {stats.municipalitiesRanked.slice(0, 8).map((entry, index) => {
+                const share = stats.totalProjects
+                  ? Math.min(100, (entry.count / stats.totalProjects) * 100)
+                  : 0
+                return (
+                  <div key={entry.municipality}>
+                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-slate-300">
+                        <span className="font-mono text-xs text-slate-600">{String(index + 1).padStart(2, '0')}</span>
+                        {entry.municipality}
+                      </span>
+                      <span className="font-bold tabular-nums text-sky-200">{formatNumber(entry.count)}</span>
+                    </div>
+                    <div
+                      role="progressbar"
+                      aria-label={`حصة بلدية ${entry.municipality}`}
+                      aria-valuenow={Math.round(share)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      className="h-1.5 overflow-hidden rounded-full bg-white/5"
+                    >
+                      <div className="h-full rounded-full bg-gradient-to-l from-cyan-300 to-sky-500 shadow-[0_0_12px_rgba(56,189,248,0.55)]" style={{ width: `${share}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+              {!stats.municipalitiesRanked.length && <p className="py-10 text-center text-sm text-slate-500">لا توجد بيانات بلديات موثقة.</p>}
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+            <header className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-white">أحدث المشاريع</h2>
+                <p className="mt-1 text-xs text-slate-500">آخر خمسة مشاريع أُضيفت للمحفظة</p>
+              </div>
+              <Clock3 className="text-violet-300" size={20} aria-hidden="true" />
+            </header>
+            <div className="divide-y divide-white/[0.06]">
+              {stats.latestProjects.map((project) => (
+                <div key={project.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-200">{project.project_name}</p>
+                    <p className="mt-1 text-xs text-slate-500">{project.sector} <span className="px-1 text-slate-700">·</span>{project.municipality}</p>
+                    <p className="mt-1 text-[11px] text-slate-600">{new Intl.DateTimeFormat('ar-LY', { dateStyle: 'medium' }).format(new Date(project.created_at))}</p>
+                  </div>
+                  <a
+                    href={`#project-${project.id}`}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-violet-300/15 bg-violet-300/5 px-2.5 py-1.5 text-[11px] font-bold text-violet-200 transition hover:bg-violet-300/10"
+                  >
+                    عرض <ArrowUpRight size={13} aria-hidden="true" />
+                  </a>
+                </div>
+              ))}
+              {!stats.latestProjects.length && <p className="py-10 text-center text-sm text-slate-500">لم تُضف مشاريع بعد.</p>}
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-rose-400/20 bg-gradient-to-br from-rose-950/30 via-slate-900/95 to-slate-900 p-5 shadow-xl shadow-rose-950/10 backdrop-blur-xl">
+            <header className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-rose-100">تدخل عاجل</h2>
+                <p className="mt-1 text-xs text-rose-200/50">مشاريع حرجة أو متوقفة · جميع حالات التوثيق</p>
+              </div>
+              <TriangleAlert className="animate-pulse text-rose-400" size={21} aria-hidden="true" />
+            </header>
+            <div className="space-y-2.5">
+              {stats.urgentProjects.map((project) => (
+                <div key={project.id} className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/10 bg-rose-400/[0.04] p-3 transition hover:border-rose-300/20 hover:bg-rose-400/[0.07]">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-200">{project.project_name}</p>
+                    <p className="mt-1 text-xs text-slate-500">{project.municipality} <span className="px-1 text-slate-700">·</span>{project.project_code}</p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    {project.priority_level === 'حرجة' && <span className="rounded-full bg-rose-400/10 px-2 py-0.5 text-[10px] font-bold text-rose-300">أولوية حرجة</span>}
+                    {project.status === 'متوقف' && <span className="rounded-full bg-orange-400/10 px-2 py-0.5 text-[10px] font-bold text-orange-300">متوقف</span>}
+                    <a href={`#project-${project.id}`} aria-label={`عرض ${project.project_name}`} className="text-xs font-bold text-rose-200 hover:text-white">عرض المشروع ←</a>
+                  </div>
+                </div>
+              ))}
+              {!stats.urgentProjects.length && <p className="py-10 text-center text-sm text-slate-500">لا توجد مشاريع حرجة أو متوقفة.</p>}
             </div>
           </article>
         </section>
@@ -418,6 +525,7 @@ export default function ProjectsCommandCenter({
                   <th className="px-4 py-4">القطاع / البلدية</th>
                   <th className="px-4 py-4">الأولوية</th>
                   <th className="px-4 py-4">الحالة</th>
+                  <th className="px-4 py-4">نسبة الإنجاز</th>
                   <th className="px-4 py-4">المساحة</th>
                   <th className="px-4 py-4">الميزانية التقديرية</th>
                   <th className="px-4 py-4">مصدر التمويل</th>
@@ -427,7 +535,7 @@ export default function ProjectsCommandCenter({
               </thead>
               <tbody className="divide-y divide-white/[0.06]">
                 {projects.map((project) => (
-                  <tr key={project.id} className="transition hover:bg-white/[0.03]">
+                  <tr id={`project-${project.id}`} key={project.id} className="transition hover:bg-white/[0.03]">
                     <td className="px-4 py-4">
                       <p className="font-bold text-white">{project.project_name}</p>
                       <p className="mt-1 font-mono text-xs text-slate-500" dir="ltr">{project.project_code}</p>
@@ -443,6 +551,16 @@ export default function ProjectsCommandCenter({
                       </span>
                     </td>
                     <td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[project.status] ?? statusClasses['مقترح']}`}>{project.status}</span></td>
+                    <td className="px-4 py-4">
+                      <div className="min-w-24">
+                        <div className="mb-1 flex justify-between text-xs tabular-nums">
+                          <span className="text-slate-300">{formatNumber(Number(project.completion_percentage) || 0)}%</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+                          <div className="h-full rounded-full bg-gradient-to-l from-emerald-300 to-cyan-400" style={{ width: `${Math.min(100, Math.max(0, Number(project.completion_percentage) || 0))}%` }} />
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-4 py-4 tabular-nums text-slate-300">{formatNumber(Number(project.area_size) || 0, 2)} <span className="text-xs text-slate-500">هكتار</span></td>
                     <td className="px-4 py-4 tabular-nums font-semibold text-amber-200">{formatNumber(Number(project.estimated_budget) || 0)} <span className="text-xs font-normal text-slate-500">د.ل</span></td>
                     <td className="px-4 py-4 text-slate-400">{project.funding_source}</td>
@@ -523,6 +641,18 @@ export default function ProjectsCommandCenter({
                     {formField('الأولوية', 'priority_level', projectPriorities, 'text', true)}
                     {formField('الحالة', 'status', projectStatuses, 'text', true)}
                     {formField('المساحة (هكتار)', 'area_size', undefined, 'number')}
+                    <label className="block text-sm font-medium text-slate-300">
+                      نسبة الإنجاز الحالية (%)
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.1"
+                        value={form.completion_percentage}
+                        onChange={(event) => setForm({ ...form, completion_percentage: Number(event.target.value) })}
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300"
+                      />
+                    </label>
                     <label className="block text-sm font-medium text-slate-300 sm:col-span-2">
                       الوصف الجغرافي
                       <textarea rows={2} maxLength={1000} value={form.location_details} onChange={(event) => setForm({ ...form, location_details: event.target.value })} className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300" />

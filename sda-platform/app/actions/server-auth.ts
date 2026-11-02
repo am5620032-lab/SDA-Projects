@@ -719,6 +719,7 @@ export interface AdminDatabase {
           is_verified: boolean
           verified_by: string | null
           verified_at: string | null
+          completion_percentage: number
         }
         Insert: {
           id?: string
@@ -738,6 +739,7 @@ export interface AdminDatabase {
           is_verified?: boolean
           verified_by?: string | null
           verified_at?: string | null
+          completion_percentage?: number
         }
         Update: {
           id?: string
@@ -757,6 +759,7 @@ export interface AdminDatabase {
           is_verified?: boolean
           verified_by?: string | null
           verified_at?: string | null
+          completion_percentage?: number
         }
         Relationships: []
       }

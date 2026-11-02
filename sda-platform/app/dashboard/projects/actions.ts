@@ -22,6 +22,7 @@ export interface DevelopmentProject {
   is_verified: boolean
   verified_by: string | null
   verified_at: string | null
+  completion_percentage: number
 }
 
 export interface ProjectFilters {
@@ -43,6 +44,22 @@ export interface ProjectInput {
   status: string
   required_intervention: string
   description: string
+  completion_percentage: number
+}
+
+export interface ProjectStatusCount {
+  status: string
+  count: number
+}
+
+export interface ProjectSectorBudget {
+  sector: string
+  budget: number
+}
+
+export interface MunicipalityProjectCount {
+  municipality: string
+  count: number
 }
 
 export interface ProjectStats {
@@ -50,6 +67,11 @@ export interface ProjectStats {
   agriculturalArea: number
   stoppedProjects: number
   totalBudget: number
+  projectsByStatus: ProjectStatusCount[]
+  budgetBySector: ProjectSectorBudget[]
+  municipalitiesRanked: MunicipalityProjectCount[]
+  latestProjects: DevelopmentProject[]
+  urgentProjects: DevelopmentProject[]
 }
 
 const emptyStats: ProjectStats = {
@@ -57,6 +79,11 @@ const emptyStats: ProjectStats = {
   agriculturalArea: 0,
   stoppedProjects: 0,
   totalBudget: 0,
+  projectsByStatus: projectStatuses.map((status) => ({ status, count: 0 })),
+  budgetBySector: projectSectors.map((sector) => ({ sector, budget: 0 })),
+  municipalitiesRanked: [],
+  latestProjects: [],
+  urgentProjects: [],
 }
 
 async function getAuthorizedAdminClient() {
@@ -132,6 +159,11 @@ export async function createProject(
   if (!Number.isFinite(input.estimated_budget) || input.estimated_budget < 0) {
     return { error: 'الميزانية يجب أن تكون رقماً موجباً أو صفراً.' }
   }
+  if (!Number.isFinite(input.completion_percentage)
+    || input.completion_percentage < 0
+    || input.completion_percentage > 100) {
+    return { error: 'نسبة الإنجاز يجب أن تكون بين 0 و100.' }
+  }
   if (input.area_size > 1_000_000_000 || input.estimated_budget > 1_000_000_000_000_000) {
     return { error: 'المساحة أو الميزانية تتجاوز الحد المسموح.' }
   }
@@ -152,6 +184,7 @@ export async function createProject(
       location_details: typeof input.location_details === 'string' ? input.location_details.trim() || null : null,
       area_size: input.area_size,
       estimated_budget: input.estimated_budget,
+      completion_percentage: input.completion_percentage,
       funding_source: fundingSource,
       priority_level: input.priority_level,
       status: input.status,
@@ -205,11 +238,22 @@ export async function getProjectsStats(): Promise<
   const context = await getAuthorizedAdminClient()
   if ('error' in context) return context
 
-  const stats: ProjectStats = { ...emptyStats }
+  const stats: ProjectStats = {
+    ...emptyStats,
+    projectsByStatus: emptyStats.projectsByStatus.map((item) => ({ ...item })),
+    budgetBySector: emptyStats.budgetBySector.map((item) => ({ ...item })),
+    municipalitiesRanked: [],
+    latestProjects: [],
+    urgentProjects: [],
+  }
+  const statusCounts = new Map(stats.projectsByStatus.map((item) => [item.status, item]))
+  const sectorBudgets = new Map(stats.budgetBySector.map((item) => [item.sector, item]))
+  const municipalityCounts = new Map<string, number>()
+
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await context.client
       .from('development_projects')
-      .select('sector, area_size, estimated_budget, status')
+      .select('sector, area_size, estimated_budget, status, municipality')
       .eq('is_verified', true)
       .order('id')
       .range(offset, offset + 999)
@@ -219,9 +263,46 @@ export async function getProjectsStats(): Promise<
       stats.totalProjects += 1
       if (project.sector === 'زراعة') stats.agriculturalArea += Number(project.area_size) || 0
       if (project.status === 'متوقف') stats.stoppedProjects += 1
-      stats.totalBudget += Number(project.estimated_budget) || 0
+      const budget = Number(project.estimated_budget) || 0
+      stats.totalBudget += budget
+      const sectorBudget = sectorBudgets.get(project.sector)
+      if (sectorBudget) sectorBudget.budget += budget
+      const statusCount = statusCounts.get(project.status)
+      if (statusCount) statusCount.count += 1
+      municipalityCounts.set(project.municipality, (municipalityCounts.get(project.municipality) ?? 0) + 1)
     }
     if (!data || data.length < 1000) break
   }
+
+  const [latestResult, urgentResult] = await Promise.all([
+    context.client
+      .from('development_projects')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id')
+      .limit(5),
+    context.client
+      .from('development_projects')
+      .select('*')
+      .or('priority_level.eq.حرجة,status.eq.متوقف')
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ])
+  if (latestResult.error) return { error: `تعذر جلب أحدث المشاريع: ${latestResult.error.message}` }
+  if (urgentResult.error) return { error: `تعذر جلب المشاريع العاجلة: ${urgentResult.error.message}` }
+
+  stats.municipalitiesRanked = [...municipalityCounts.entries()]
+    .map(([municipality, count]) => ({ municipality, count }))
+    .sort((first, second) => second.count - first.count || first.municipality.localeCompare(second.municipality, 'ar'))
+  stats.latestProjects = latestResult.data ?? []
+  stats.urgentProjects = (urgentResult.data ?? [])
+    .sort((first, second) => {
+      const priorityDifference = Number(second.priority_level === 'حرجة') - Number(first.priority_level === 'حرجة')
+      if (priorityDifference) return priorityDifference
+      const stoppedDifference = Number(second.status === 'متوقف') - Number(first.status === 'متوقف')
+      if (stoppedDifference) return stoppedDifference
+      return Date.parse(second.created_at) - Date.parse(first.created_at)
+    })
+    .slice(0, 8)
   return { stats }
 }
