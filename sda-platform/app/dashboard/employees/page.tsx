@@ -72,11 +72,25 @@ export default function EmployeesPage() {
         return
       }
 
-      const [profileResult, employeesResult, departmentsResult, employeeCountResult, pendingCountResult, pendingLeavesResult] = await Promise.all([
+      const loadEmployees = async (): Promise<Employee[]> => {
+        try {
+          const { data, error } = await supabase.from('employees')
+            .select('*, department_info:departments!employees_department_id_fkey(name), direct_manager_info:employees!employees_direct_manager_id_fkey(full_name)')
+            .order('created_at', { ascending: false })
+          if (error) throw error
+          return data ?? []
+        } catch (error) {
+          console.error('Failed to fetch employees:', error)
+          setDashboardError(error instanceof Error
+            ? `تعذر تحميل بيانات الموظفين: ${error.message}`
+            : 'تعذر تحميل بيانات الموظفين.')
+          return []
+        }
+      }
+
+      const [profileResult, employeeRows, departmentsResult, employeeCountResult, pendingCountResult, pendingLeavesResult] = await Promise.all([
         supabase.from('profiles').select('role').eq('id', user.id).single(),
-        supabase.from('employees')
-          .select('*, department_info:departments!employees_department_id_fkey(name), direct_manager_info:employees!employees_direct_manager_id_fkey(full_name)')
-          .order('created_at', { ascending: false }),
+        loadEmployees(),
         supabase.from('departments').select('id, name, type, parent_id, manager_id, created_at').order('name'),
         supabase.from('employees').select('id', { count: 'exact', head: true }),
         supabase.from('leaves').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
@@ -86,15 +100,13 @@ export default function EmployeesPage() {
           .order('created_at', { ascending: false })
           .limit(3),
       ])
-
       if (profileResult.error) throw profileResult.error
-      if (employeesResult.error) throw employeesResult.error
       if (departmentsResult.error) throw departmentsResult.error
 
       setUserRole(profileResult.data.role)
-      setEmployees(employeesResult.data ?? [])
+      setEmployees(employeeRows)
       setDepartments(departmentsResult.data ?? [])
-      setEmployeeCount(employeeCountResult.count ?? 0)
+      setEmployeeCount(employeeCountResult.count ?? employeeRows.length)
 
       const counts = new Map<string, number>([
         ['الإدارة الرئيسيه / طرابلس', 0],
@@ -105,7 +117,7 @@ export default function EmployeesPage() {
         ['براك الشاطئ', 0],
         ['حوض مرزق', 0],
       ])
-      for (const employee of employeesResult.data ?? []) {
+      for (const employee of employeeRows) {
         const branch = employee.branch?.trim() || 'غير محدد'
         counts.set(branch, (counts.get(branch) ?? 0) + 1)
       }
@@ -119,6 +131,13 @@ export default function EmployeesPage() {
         setPendingLeaves(pendingLeavesResult.data ?? [])
       }
     } catch (error) {
+      console.error('Failed to load employee dashboard:', error)
+      setEmployees([])
+      setDepartments([])
+      setEmployeeCount(0)
+      setPendingLeaveCount(0)
+      setBranchCounts([])
+      setPendingLeaves([])
       setDashboardError(error instanceof Error ? error.message : 'تعذر تحميل بيانات منظومة شؤون الموظفين.')
     } finally {
       setLoading(false)
