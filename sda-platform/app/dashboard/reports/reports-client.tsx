@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import type { AdminReportsData } from '@/app/actions/admin-reports'
+import type { AdminReportsData } from '@/app/actions/admin-reports-types'
 
 const leaveColors = ['#15803d', '#dc2626', '#d97706']
 
