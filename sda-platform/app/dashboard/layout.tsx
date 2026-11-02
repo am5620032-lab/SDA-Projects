@@ -7,14 +7,13 @@ import Sidebar from '@/components/layout/Sidebar'
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies()
   const hrClaims = verifyModuleAccessToken(cookieStore.get(MODULE_ACCESS_COOKIES.hr)?.value, 'hr')
-  const notificationResult = hrClaims ? await getMyNotifications() : null
-  if (notificationResult && 'error' in notificationResult) throw new Error(notificationResult.error)
+  const initialNotifications = hrClaims ? await getMyNotifications() : []
 
   return (
     <div dir="rtl" className="min-h-screen md:flex">
       <Sidebar
         hasHrAccess={Boolean(hrClaims)}
-        initialNotifications={notificationResult && 'notifications' in notificationResult ? notificationResult.notifications : []}
+        initialNotifications={initialNotifications}
       />
       <div className="min-w-0 flex-1">{children}</div>
     </div>

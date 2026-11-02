@@ -12,18 +12,20 @@ export default function NotificationBell({
   initialNotifications: EmployeeNotification[]
 }) {
   const router = useRouter()
-  const [notifications, setNotifications] = useState(initialNotifications)
+  const [notifications, setNotifications] = useState<EmployeeNotification[]>(initialNotifications ?? [])
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
 
   const refresh = useCallback(async () => {
-    const result = await getMyNotifications()
-    if ('error' in result) {
-      setError(result.error)
-      return
-    }
     setError('')
-    setNotifications(result.notifications)
+    try {
+      const currentNotifications = await getMyNotifications()
+      setNotifications(Array.isArray(currentNotifications) ? currentNotifications : [])
+    } catch (refreshError) {
+      console.error('Failed to refresh notification list:', refreshError)
+      setNotifications([])
+      setError('تعذر تحديث الإشعارات حالياً.')
+    }
   }, [])
 
   useEffect(() => {

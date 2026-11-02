@@ -64,22 +64,31 @@ export async function createNotification(data: CreateNotificationInput): Promise
   return { success: true }
 }
 
-export async function getMyNotifications(): Promise<
-  { notifications: EmployeeNotification[] } | { error: string }
-> {
-  const employeeId = await getHrEmployeeId()
-  if (!employeeId) return { error: 'يجب تسجيل الدخول إلى منظومة شؤون الموظفين.' }
-  const adminResult = createSupabaseAdminClient()
-  if ('error' in adminResult) return adminResult
+export async function getMyNotifications(): Promise<EmployeeNotification[]> {
+  try {
+    const employeeId = await getHrEmployeeId()
+    if (!employeeId) return []
+    const adminResult = createSupabaseAdminClient()
+    if ('error' in adminResult) {
+      console.error('Failed to initialize notification database client:', adminResult.error)
+      return []
+    }
 
-  const { data, error } = await adminResult.client
-    .from('notifications')
-    .select('id, employee_id, title, message, link, is_read, created_at')
-    .eq('employee_id', employeeId)
-    .order('created_at', { ascending: false })
-    .limit(50)
-  if (error) return { error: `تعذر جلب الإشعارات: ${error.message}` }
-  return { notifications: data ?? [] }
+    const { data, error } = await adminResult.client
+      .from('notifications')
+      .select('id, employee_id, title, message, link, is_read, created_at')
+      .eq('employee_id', employeeId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (error) {
+      console.error('Failed to fetch notifications:', error.message)
+      return []
+    }
+    return data ?? []
+  } catch (error) {
+    console.error('Unexpected error while fetching notifications:', error)
+    return []
+  }
 }
 
 export async function markAsRead(notificationId: string): Promise<ActionResult> {
