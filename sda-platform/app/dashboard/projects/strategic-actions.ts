@@ -75,6 +75,34 @@ export interface InvestmentOpportunityRow {
   created_at: string
 }
 
+export interface SectorProjectRow {
+  id: string
+  project_name: string
+  sector_type: string
+  location: string
+  budget: number
+  status: string
+  completion_percentage: number
+  created_at: string
+}
+
+export interface FieldVisitRow {
+  id: string
+  visit_date: string
+  location: string
+  purpose: string
+  findings: string
+  visitor_name: string
+  created_at: string
+}
+
+const sectorTypes = ['صحي', 'تعليمي', 'بنية تحتية'] as const
+type SectorType = typeof sectorTypes[number]
+
+function isSectorType(value: string): value is SectorType {
+  return sectorTypes.some((sector) => sector === value)
+}
+
 export async function getProjectTracking(): Promise<{ rows: TrackingRow[] } | { error: string }> {
   const context = await getStrategicClient()
   if ('error' in context) return context
@@ -344,5 +372,103 @@ export async function submitInvestmentApplication(
   })
   if (error) return { error: `تعذر تسجيل طلب الاستثمار: ${error.message}` }
   revalidatePath('/dashboard/projects/investments')
+  return { success: true }
+}
+
+export async function getSectorProjects(
+  allowedSectors: SectorType[],
+): Promise<{ rows: SectorProjectRow[] } | { error: string }> {
+  const context = await getStrategicClient()
+  if ('error' in context) return context
+  if (!allowedSectors.length || allowedSectors.some((sector) => !sectorTypes.includes(sector))) {
+    return { error: 'قائمة القطاعات المطلوبة غير صالحة.' }
+  }
+
+  const { data, error } = await context.client
+    .from('development_sectors_projects')
+    .select('*')
+    .in('sector_type', allowedSectors)
+    .order('created_at', { ascending: false })
+  if (error) return { error: `تعذر جلب المشاريع القطاعية: ${error.message}` }
+  return { rows: data ?? [] }
+}
+
+export async function createSectorProject(formData: FormData): Promise<{ success: true } | { error: string }> {
+  const context = await getStrategicClient()
+  if ('error' in context) return context
+
+  const projectName = String(formData.get('project_name') ?? '').trim()
+  const sectorType = String(formData.get('sector_type') ?? '')
+  const location = String(formData.get('location') ?? '').trim()
+  const status = String(formData.get('status') ?? '')
+  const budget = Number(formData.get('budget'))
+  const completionPercentage = Number(formData.get('completion_percentage'))
+  if (!projectName || projectName.length > 200) return { error: 'اسم المشروع مطلوب.' }
+  if (!isSectorType(sectorType)) return { error: 'نوع القطاع غير صالح.' }
+  if (!location || location.length > 200) return { error: 'موقع المشروع مطلوب.' }
+  if (!Number.isFinite(budget) || budget < 0 || budget > 1_000_000_000_000_000) {
+    return { error: 'الميزانية المدخلة غير صالحة.' }
+  }
+  if (!Number.isFinite(completionPercentage) || completionPercentage < 0 || completionPercentage > 100) {
+    return { error: 'نسبة الإنجاز يجب أن تكون بين 0 و100.' }
+  }
+  if (!['مقترح', 'قيد الدراسة', 'متوقف', 'قيد التنفيذ', 'منجز'].includes(status)) {
+    return { error: 'حالة المشروع غير صالحة.' }
+  }
+
+  const { error } = await context.client.from('development_sectors_projects').insert({
+    project_name: projectName,
+    sector_type: sectorType,
+    location,
+    budget,
+    status,
+    completion_percentage: completionPercentage,
+  })
+  if (error) return { error: `تعذر حفظ المشروع القطاعي: ${error.message}` }
+
+  revalidatePath('/dashboard/projects/urban')
+  revalidatePath('/dashboard/projects/health-education')
+  revalidatePath('/dashboard/projects')
+  return { success: true }
+}
+
+export async function getFieldVisits(): Promise<{ rows: FieldVisitRow[] } | { error: string }> {
+  const context = await getStrategicClient()
+  if ('error' in context) return context
+
+  const { data, error } = await context.client
+    .from('field_visits')
+    .select('*')
+    .order('visit_date', { ascending: false })
+    .order('created_at', { ascending: false })
+  if (error) return { error: `تعذر جلب الزيارات الميدانية: ${error.message}` }
+  return { rows: data ?? [] }
+}
+
+export async function createFieldVisit(formData: FormData): Promise<{ success: true } | { error: string }> {
+  const context = await getStrategicClient()
+  if ('error' in context) return context
+
+  const visitDate = String(formData.get('visit_date') ?? '')
+  const location = String(formData.get('location') ?? '').trim()
+  const purpose = String(formData.get('purpose') ?? '').trim()
+  const findings = String(formData.get('findings') ?? '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || Number.isNaN(Date.parse(visitDate))) {
+    return { error: 'تاريخ الزيارة غير صالح.' }
+  }
+  if (!location || location.length > 200) return { error: 'موقع الزيارة مطلوب.' }
+  if (!purpose || purpose.length > 1000) return { error: 'غرض الزيارة مطلوب ولا يتجاوز 1000 حرف.' }
+  if (!findings || findings.length > 5000) return { error: 'نتائج الزيارة مطلوبة ولا تتجاوز 5000 حرف.' }
+
+  const { error } = await context.client.from('field_visits').insert({
+    visit_date: visitDate,
+    location,
+    purpose,
+    findings,
+    visitor_name: context.actor.fullName || context.actor.email || 'مستخدم المنظومة',
+  })
+  if (error) return { error: `تعذر تسجيل الزيارة الميدانية: ${error.message}` }
+
+  revalidatePath('/dashboard/projects/visits')
   return { success: true }
 }

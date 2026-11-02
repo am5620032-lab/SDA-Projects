@@ -970,6 +970,69 @@ export interface AdminDatabase {
         }
         Relationships: []
       }
+      development_sectors_projects: {
+        Row: {
+          id: string
+          project_name: string
+          sector_type: string
+          location: string
+          budget: number
+          status: string
+          completion_percentage: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_name: string
+          sector_type: string
+          location: string
+          budget?: number
+          status?: string
+          completion_percentage?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_name?: string
+          sector_type?: string
+          location?: string
+          budget?: number
+          status?: string
+          completion_percentage?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      field_visits: {
+        Row: {
+          id: string
+          visit_date: string
+          location: string
+          purpose: string
+          findings: string
+          visitor_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          visit_date: string
+          location: string
+          purpose: string
+          findings: string
+          visitor_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          visit_date?: string
+          location?: string
+          purpose?: string
+          findings?: string
+          visitor_name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       project_attachments: {
         Row: {
           id: string

@@ -5,23 +5,34 @@ import {
   Banknote,
   Building,
   Building2,
+  CalendarDays,
+  ClipboardCheck,
   DatabaseBackup,
+  FileArchive,
   FileCheck2,
   FileText,
   Globe2,
+  GraduationCap,
   HeartPulse,
+  Home,
   LayoutDashboard,
   LogOut,
   MapPinned,
   Menu,
   Mountain,
+  Plane,
+  Scale,
   Sprout,
   ScrollText,
   Settings,
+  ShieldCheck,
+  UserRoundCheck,
   UsersRound,
   X,
+  type LucideIcon,
 } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { logoutFromPlatform } from '@/app/actions/logout'
 
@@ -47,94 +58,91 @@ function NavigationLink({
 
 export default function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const pathname = usePathname()
   const closeMobileMenu = () => setIsMobileOpen(false)
+  const isEmployeeArea = pathname.startsWith('/dashboard/employees')
+  const isProjectArea = pathname.startsWith('/dashboard/projects')
+
+  const renderLinks = (items: Array<{ href: string; label: string; icon: LucideIcon }>) => (
+    <div className="space-y-1">
+      {items.map(({ href, label, icon: Icon }) => (
+        <NavigationLink key={href} href={href} onClick={closeMobileMenu}>
+          <Icon size={18} aria-hidden="true" />
+          {label}
+        </NavigationLink>
+      ))}
+    </div>
+  )
+
+  const employeeLinks = [
+    { href: '/dashboard/employees', label: 'الموظفون', icon: UsersRound },
+    { href: '/dashboard/employees/organization', label: 'الهيكل التنظيمي', icon: Building2 },
+    { href: '/dashboard/attendance', label: 'الحضور والانصراف', icon: CalendarDays },
+    { href: '/dashboard/leaves', label: 'الإجازات', icon: Plane },
+    { href: '/dashboard/employees/decisions', label: 'القرارات الإدارية', icon: FileCheck2 },
+    { href: '/dashboard/employees/delegations', label: 'الإيفاد والتكليف', icon: ClipboardCheck },
+    { href: '/dashboard/employees/promotions', label: 'الترقيات', icon: Scale },
+    { href: '/dashboard/employees/evaluations', label: 'تقييم الأداء', icon: UserRoundCheck },
+    { href: '/dashboard/employees/trainings', label: 'التدريب والتطوير', icon: GraduationCap },
+    { href: '/dashboard/employees/penalties', label: 'الجزاءات', icon: ShieldCheck },
+    { href: '/dashboard/employees/custody', label: 'العهد', icon: FileArchive },
+    { href: '/dashboard/employees/assets', label: 'الأصول', icon: Building },
+    { href: '/dashboard/employees/clearances', label: 'إخلاء الطرف', icon: FileCheck2 },
+    { href: '/dashboard/employees/correspondences', label: 'المراسلات', icon: FileText },
+    { href: '/dashboard/employees/archive', label: 'أرشيف الموظفين', icon: Archive },
+    { href: '/dashboard/employees/reports', label: 'تقارير الموارد البشرية', icon: FileText },
+  ]
+
+  const projectLinks = [
+    { href: '/dashboard/projects', label: 'مركز القيادة الاستراتيجي', icon: LayoutDashboard },
+    { href: '/dashboard/projects/database', label: 'قاعدة بيانات المشاريع', icon: Building2 },
+    { href: '/dashboard/projects/tracking', label: 'متابعة تنفيذ المشاريع', icon: FileCheck2 },
+    { href: '/dashboard/projects/visits', label: 'الزيارات والمتابعة الميدانية', icon: MapPinned },
+    { href: '/dashboard/projects/gis', label: 'الخريطة الجغرافية GIS', icon: Globe2 },
+    { href: '/dashboard/projects/finance', label: 'إدارة الميزانيات والتمويل', icon: Banknote },
+    { href: '/dashboard/projects/lands', label: 'قاعدة بيانات الأراضي والزراعة', icon: Sprout },
+    { href: '/dashboard/projects/minerals', label: 'الموارد الطبيعية والمعادن', icon: Mountain },
+    { href: '/dashboard/projects/investments', label: 'بوابة الفرص الاستثمارية', icon: Building },
+    { href: '/dashboard/projects/urban', label: 'التنمية العمرانية والبنية التحتية', icon: Building2 },
+    { href: '/dashboard/projects/health-education', label: 'التنمية الصحية والتعليمية', icon: HeartPulse },
+    { href: '/dashboard/reports', label: 'التقارير والإحصائيات', icon: FileText },
+  ]
+
+  const administrationLinks = [
+    { href: '/dashboard/users', label: 'إدارة المستخدمين والصلاحيات', icon: UsersRound },
+    { href: '/dashboard/audit-logs', label: 'سجل العمليات والتدقيق', icon: ScrollText },
+    { href: '/dashboard/settings', label: 'إعدادات النظام', icon: Settings },
+    { href: '/dashboard/backup', label: 'النسخ الاحتياطي', icon: DatabaseBackup },
+  ]
 
   const navigation = (
     <>
-      <section>
-        <h2 className="mb-2 px-3 text-xs font-bold text-emerald-700">منظومة الجنوب الاستراتيجية</h2>
-        <div className="space-y-1">
-          <NavigationLink href="/dashboard/projects" onClick={closeMobileMenu}>
-            <LayoutDashboard size={18} aria-hidden="true" />
-            مركز القيادة الاستراتيجي
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/database" onClick={closeMobileMenu}>
-            <Building2 size={18} aria-hidden="true" />
-            قاعدة بيانات المشاريع
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/tracking" onClick={closeMobileMenu}>
-            <FileCheck2 size={18} aria-hidden="true" />
-            متابعة تنفيذ المشاريع
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/gis" onClick={closeMobileMenu}>
-            <Globe2 size={18} aria-hidden="true" />
-            الخريطة الجغرافية GIS
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/finance" onClick={closeMobileMenu}>
-            <Banknote size={18} aria-hidden="true" />
-            إدارة الميزانيات والتمويل
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/lands" onClick={closeMobileMenu}>
-            <Sprout size={18} aria-hidden="true" />
-            قاعدة بيانات الأراضي والزراعة
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/minerals" onClick={closeMobileMenu}>
-            <Mountain size={18} aria-hidden="true" />
-            قاعدة بيانات الموارد الطبيعية والمعادن
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/investments" onClick={closeMobileMenu}>
-            <Building size={18} aria-hidden="true" />
-            بوابة الفرص الاستثمارية
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/urban-development" onClick={closeMobileMenu}>
-            <Building2 size={18} aria-hidden="true" />
-            التنمية العمرانية والبنية التحتية
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/health-education" onClick={closeMobileMenu}>
-            <HeartPulse size={18} aria-hidden="true" />
-            التنمية الصحية والتعليمية
-          </NavigationLink>
-          <NavigationLink href="/dashboard/reports" onClick={closeMobileMenu}>
-            <FileText size={18} aria-hidden="true" />
-            التقارير والإحصائيات
-          </NavigationLink>
-          <NavigationLink href="/dashboard/projects/field-visits" onClick={closeMobileMenu}>
-            <MapPinned size={18} aria-hidden="true" />
-            الزيارات والمتابعة الميدانية
-          </NavigationLink>
-          <NavigationLink href="/dashboard/employees/correspondences" onClick={closeMobileMenu}>
-            <FileCheck2 size={18} aria-hidden="true" />
-            المراسلات والاعتمادات
-          </NavigationLink>
-          <NavigationLink href="/dashboard/archive" onClick={closeMobileMenu}>
-            <Archive size={18} aria-hidden="true" />
-            الأرشيف الإلكتروني
-          </NavigationLink>
-        </div>
-      </section>
-
-      <section className="border-t border-gray-100 pt-3">
-        <h2 className="mb-2 px-3 text-xs font-bold text-gray-400">الإدارة العليا</h2>
-        <div className="space-y-1">
-          <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}>
-            <UsersRound size={18} aria-hidden="true" />
-            إدارة المستخدمين والصلاحيات
-          </NavigationLink>
-          <NavigationLink href="/dashboard/audit-logs" onClick={closeMobileMenu}>
-            <ScrollText size={18} aria-hidden="true" />
-            سجل العمليات والتدقيق
-          </NavigationLink>
-          <NavigationLink href="/dashboard/settings" onClick={closeMobileMenu}>
-            <Settings size={18} aria-hidden="true" />
-            إعدادات النظام
-          </NavigationLink>
-          <NavigationLink href="/dashboard/backup" onClick={closeMobileMenu}>
-            <DatabaseBackup size={18} aria-hidden="true" />
-            النسخ الاحتياطي
-          </NavigationLink>
-        </div>
-      </section>
-
+      {(isEmployeeArea || isProjectArea) && (
+        <Link
+          href="/dashboard"
+          onClick={closeMobileMenu}
+          className="mb-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100"
+        >
+          <Home size={18} aria-hidden="true" />
+          العودة لبوابة المنظومات
+        </Link>
+      )}
+      {isEmployeeArea ? (
+        <section>
+          <h2 className="mb-2 px-3 text-sm font-black text-emerald-800">منظومة شؤون الموظفين</h2>
+          {renderLinks(employeeLinks)}
+        </section>
+      ) : isProjectArea ? (
+        <section>
+          <h2 className="mb-2 px-3 text-sm font-black text-emerald-800">منظومة الجنوب الاستراتيجية</h2>
+          {renderLinks(projectLinks)}
+        </section>
+      ) : (
+        <section>
+          <h2 className="mb-2 px-3 text-xs font-bold text-gray-400">الإدارة العليا</h2>
+          {renderLinks(administrationLinks)}
+        </section>
+      )}
     </>
   )
 
