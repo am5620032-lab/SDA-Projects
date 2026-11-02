@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Archive, Check, Download, Eye, FileUp, Search, Trash2, X } from 'lucide-react'
+import { Archive, Check, Download, Eye, FileUp, Search, ScanLine, Trash2, X } from 'lucide-react'
 import { archiveLogout } from '@/app/archive/login/actions'
 import { createClient } from '@/utils/supabase/client'
 import {
@@ -126,13 +126,24 @@ export default function ArchiveClient({
       const documentType = form.querySelector<HTMLSelectElement>('select[name="document_type"]')?.value
       const classificationValue = form.querySelector<HTMLSelectElement>('select[name="classification"]')?.value
       const employeeId = form.querySelector<HTMLSelectElement>('select[name="employee_id"]')?.value
+      const sourceEntity = form.querySelector<HTMLInputElement>('input[name="source_entity"]')?.value.trim()
+      const destinationEntity = form.querySelector<HTMLInputElement>('input[name="destination_entity"]')?.value.trim()
+      const externalReference = form.querySelector<HTMLInputElement>('input[name="external_reference"]')?.value.trim()
+      const documentDate = form.querySelector<HTMLInputElement>('input[name="document_date"]')?.value
       if (!files.length || !documentType || !classificationValue) {
         throw new Error('اختر ملفاً واحداً على الأقل ونوع المستند وتصنيفه.')
+      }
+      if (!sourceEntity || !destinationEntity) {
+        throw new Error('يرجى إدخال الجهة المصدرة والجهة الموجه إليها.')
       }
 
       const request = new FormData()
       request.set('document_type', documentType)
       request.set('classification', classificationValue)
+      request.set('source_entity', sourceEntity)
+      request.set('destination_entity', destinationEntity)
+      request.set('external_reference', externalReference ?? '')
+      request.set('document_date', documentDate ?? '')
       if (employeeId) request.set('employee_id', employeeId)
       request.set('file_manifest', JSON.stringify(files.map((file) => {
         const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
@@ -171,6 +182,10 @@ export default function ArchiveClient({
               employeeId: ticket.employeeId,
               filePath: ticket.filePath,
               fileType: ticket.fileType,
+              sourceEntity: ticket.sourceEntity,
+              destinationEntity: ticket.destinationEntity,
+              externalReference: ticket.externalReference,
+              documentDate: ticket.documentDate,
               signature: ticket.signature,
             })
             return { error: '' }
@@ -314,15 +329,17 @@ export default function ArchiveClient({
           {loading && !data ? <p className="py-8 text-center text-gray-500">جاري تحميل الأرشيف...</p> : !data?.documents.length ? (
             <p className="py-10 text-center text-gray-500">{loading ? 'جارٍ البحث...' : 'لا توجد مستندات مطابقة.'}</p>
           ) : (
-            <table className="w-full min-w-[950px] text-right text-sm">
+            <table className="w-full min-w-[1150px] text-right text-sm">
               <thead className="bg-gray-50 text-gray-600">
-                <tr><th className="p-3">الرقم</th><th className="p-3">اسم المستند</th><th className="p-3">النوع</th><th className="p-3">التصنيف</th><th className="p-3">الحالة</th><th className="p-3">التاريخ</th><th className="p-3">الإجراءات</th></tr>
+                <tr><th className="p-3">الرقم</th><th className="p-3">اسم المستند</th><th className="p-3">المصدر</th><th className="p-3">الوجهة</th><th className="p-3">النوع</th><th className="p-3">التصنيف</th><th className="p-3">الحالة</th><th className="p-3">التاريخ</th><th className="p-3">الإجراءات</th></tr>
               </thead>
               <tbody>
                 {data.documents.map((document) => (
                   <tr key={document.id} className="border-t align-middle">
                     <td className="p-3 font-semibold" dir="ltr">{document.document_number}</td>
                     <td className="max-w-xs truncate p-3" title={document.document_name}>{document.document_name}</td>
+                    <td className="max-w-[180px] truncate p-3" title={document.source_entity ?? ''}>{document.source_entity || '—'}</td>
+                    <td className="max-w-[180px] truncate p-3" title={document.destination_entity ?? ''}>{document.destination_entity || '—'}</td>
                     <td className="p-3">{documentTypes.find((option) => option.value === document.document_type)?.label ?? document.document_type}</td>
                     <td className="p-3">{classifications.find((option) => option.value === document.classification)?.label ?? document.classification}</td>
                     <td className="p-3">
@@ -371,12 +388,17 @@ export default function ArchiveClient({
                 <button type="button" onClick={() => setModalOpen(false)} aria-label="إغلاق" className="rounded-full bg-gray-100 p-2 text-gray-700 hover:bg-gray-200"><X size={20} /></button>
               </div>
               <form onSubmit={submitUpload} className="space-y-4">
-                <label className="block text-sm font-semibold">الملفات (PDF، Word أو صور — حتى 10 ملفات، 15MB لكل ملف)
-                  <input name="files" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp" className="mt-1 w-full rounded-lg border p-3" />
-                </label>
-                <label className="block text-sm font-semibold">مسح ضوئي بالكاميرا
-                  <input name="scan_file" type="file" accept="image/*" capture="environment" className="mt-1 w-full rounded-lg border p-3" />
-                </label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-semibold">اختيار الملفات (PDF، JPG، PNG — حتى 10 ملفات، 15MB لكل ملف)
+                    <input name="files" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp" className="mt-1 w-full rounded-lg border p-3" />
+                  </label>
+                  <label className="block text-sm font-semibold">مسح ضوئي بالكاميرا
+                    <span className="mt-1 flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 font-bold text-amber-800 hover:bg-amber-100">
+                      <ScanLine size={18} aria-hidden="true" />التقاط صورة أو مسح ضوئي
+                      <input name="scan_file" type="file" accept="image/*" capture="environment" className="sr-only" />
+                    </span>
+                  </label>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-semibold">نوع المستند
                     <select name="document_type" required defaultValue="incoming" className="mt-1 w-full rounded-lg border px-3 py-2.5">
@@ -387,6 +409,18 @@ export default function ArchiveClient({
                     <select name="classification" required defaultValue="normal" className="mt-1 w-full rounded-lg border px-3 py-2.5">
                       {classifications.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
+                  </label>
+                  <label className="block text-sm font-semibold">الجهة المصدرة (من أين)
+                    <input name="source_entity" type="text" required maxLength={255} className="mt-1 w-full rounded-lg border px-3 py-2.5" />
+                  </label>
+                  <label className="block text-sm font-semibold">الجهة الموجه إليها (إلى أين)
+                    <input name="destination_entity" type="text" required maxLength={255} className="mt-1 w-full rounded-lg border px-3 py-2.5" />
+                  </label>
+                  <label className="block text-sm font-semibold">رقم الصادر/الوارد الخارجي (اختياري)
+                    <input name="external_reference" type="text" maxLength={100} className="mt-1 w-full rounded-lg border px-3 py-2.5" />
+                  </label>
+                  <label className="block text-sm font-semibold">تاريخ المستند
+                    <input name="document_date" type="date" className="mt-1 w-full rounded-lg border px-3 py-2.5" />
                   </label>
                   {data?.canManage && (
                     <label className="block text-sm font-semibold sm:col-span-2">ربط بموظف (اختياري)

@@ -623,6 +623,10 @@ export interface AdminDatabase {
           employee_id: string | null
           file_url: string
           file_type: string
+          source_entity: string | null
+          destination_entity: string | null
+          external_reference: string | null
+          document_date: string | null
           status: string
           uploaded_by: string
           created_at: string
@@ -636,6 +640,10 @@ export interface AdminDatabase {
           employee_id?: string | null
           file_url: string
           file_type: string
+          source_entity?: string | null
+          destination_entity?: string | null
+          external_reference?: string | null
+          document_date?: string | null
           status?: string
           uploaded_by: string
           created_at?: string
@@ -649,6 +657,10 @@ export interface AdminDatabase {
           employee_id?: string | null
           file_url?: string
           file_type?: string
+          source_entity?: string | null
+          destination_entity?: string | null
+          external_reference?: string | null
+          document_date?: string | null
           status?: string
           uploaded_by?: string
           created_at?: string

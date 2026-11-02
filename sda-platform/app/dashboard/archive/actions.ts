@@ -40,6 +40,10 @@ export interface ArchiveDocument {
   employee_id: string | null
   file_url: string
   file_type: string
+  source_entity: string | null
+  destination_entity: string | null
+  external_reference: string | null
+  document_date: string | null
   status: string
   uploaded_by: string
   created_at: string
@@ -60,6 +64,10 @@ export interface ArchiveUploadTicket {
   employeeId: string | null
   filePath: string
   fileType: string
+  sourceEntity: string
+  destinationEntity: string
+  externalReference: string | null
+  documentDate: string | null
   token: string
   signature: string
 }
@@ -121,6 +129,10 @@ function getUploadTicketSignature(actorId: string, ticket: ArchiveUploadedDocume
     ticket.employeeId,
     ticket.filePath,
     ticket.fileType,
+    ticket.sourceEntity,
+    ticket.destinationEntity,
+    ticket.externalReference,
+    ticket.documentDate,
   ])
   return createHmac('sha256', secret).update(payload).digest('hex')
 }
@@ -164,14 +176,42 @@ export async function uploadArchiveDocument(formData: FormData): Promise<{
   const classificationValue = formData.get('classification')
   const employeeValue = formData.get('employee_id')
   const manifestValue = formData.get('file_manifest')
+  const sourceEntityValue = formData.get('source_entity')
+  const destinationEntityValue = formData.get('destination_entity')
+  const externalReferenceValue = formData.get('external_reference')
+  const documentDateValue = formData.get('document_date')
   if (
     typeof typeValue !== 'string'
     || !Object.hasOwn(documentPrefixes, typeValue)
     || typeof classificationValue !== 'string'
     || !['normal', 'important', 'secret'].includes(classificationValue)
     || (employeeValue !== null && typeof employeeValue !== 'string')
+    || typeof sourceEntityValue !== 'string'
+    || typeof destinationEntityValue !== 'string'
+    || (externalReferenceValue !== null && typeof externalReferenceValue !== 'string')
+    || (documentDateValue !== null && typeof documentDateValue !== 'string')
     || typeof manifestValue !== 'string'
   ) return { error: 'يرجى اختيار نوع المستند وتصنيفه.' }
+  const sourceEntity = sourceEntityValue.trim()
+  const destinationEntity = destinationEntityValue.trim()
+  const externalReference = typeof externalReferenceValue === 'string'
+    ? externalReferenceValue.trim() || null
+    : null
+  const documentDate = typeof documentDateValue === 'string' ? documentDateValue.trim() || null : null
+  if (!sourceEntity || !destinationEntity || sourceEntity.length > 255 || destinationEntity.length > 255) {
+    return { error: 'يرجى إدخال الجهة المصدرة والجهة الموجه إليها بحد أقصى 255 حرفاً.' }
+  }
+  if (externalReference && externalReference.length > 100) {
+    return { error: 'رقم الصادر/الوارد الخارجي يجب ألا يتجاوز 100 حرف.' }
+  }
+  if (documentDate) {
+    const parsedDate = new Date(`${documentDate}T00:00:00.000Z`)
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(documentDate)
+      || Number.isNaN(parsedDate.getTime())
+      || parsedDate.toISOString().slice(0, 10) !== documentDate
+    ) return { error: 'تاريخ المستند غير صالح.' }
+  }
 
   let manifest: unknown
   try {
@@ -246,6 +286,10 @@ export async function uploadArchiveDocument(formData: FormData): Promise<{
       employeeId,
       filePath: signedUpload.path,
       fileType: item.type,
+      sourceEntity,
+      destinationEntity,
+      externalReference,
+      documentDate,
       signature: '',
     }
     const signature = getUploadTicketSignature(context.actorId, ticket)
@@ -296,6 +340,10 @@ export async function completeArchiveDocumentUploads(
       || typeof item.fileType !== 'string'
       || !allowedFileTypes.has(item.fileType)
       || typeof item.filePath !== 'string'
+      || typeof item.sourceEntity !== 'string'
+      || typeof item.destinationEntity !== 'string'
+      || (item.externalReference !== null && typeof item.externalReference !== 'string')
+      || (item.documentDate !== null && typeof item.documentDate !== 'string')
       || typeof item.signature !== 'string'
       || typeof item.employeeId !== 'string' && item.employeeId !== null
     ) {
@@ -381,6 +429,10 @@ export async function completeArchiveDocumentUploads(
       employee_id: item.employeeId,
       file_url: item.filePath,
       file_type: item.fileType,
+      source_entity: item.sourceEntity,
+      destination_entity: item.destinationEntity,
+      external_reference: item.externalReference,
+      document_date: item.documentDate,
       status: 'pending',
       uploaded_by: context.actorId,
     })
@@ -427,7 +479,7 @@ export async function searchDocuments(
   if ('error' in context) return context
 
   let request = context.client.from('archive_documents')
-    .select('id, document_number, document_name, document_type, classification, employee_id, file_url, file_type, status, uploaded_by, created_at')
+    .select('id, document_number, document_name, document_type, classification, employee_id, file_url, file_type, source_entity, destination_entity, external_reference, document_date, status, uploaded_by, created_at')
     .order('created_at', { ascending: false })
     .limit(500)
   if (!context.canManage) request = request.eq('uploaded_by', context.actorId)
