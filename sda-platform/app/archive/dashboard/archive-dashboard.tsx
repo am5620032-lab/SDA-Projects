@@ -1,29 +1,25 @@
-'use client'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { getAuthenticatedActor } from '@/app/actions/server-auth'
+import { MODULE_ACCESS_COOKIES, verifyModuleAccessToken } from '@/app/archive/module-auth'
+import ArchiveClient from '@/app/dashboard/archive/archive-client'
+import { searchDocuments } from '@/app/dashboard/archive/actions'
 
-import { useState } from 'react'
-import { Search } from 'lucide-react'
-
-export default function ArchiveDashboard() {
-  const [query, setQuery] = useState('')
-
-  return (
-    <section className="rounded-xl bg-white p-6 shadow-sm">
-      <label className="block max-w-xl text-sm font-semibold text-gray-700">
-        البحث بالاسم أو الرقم الوطني
-        <span className="relative mt-2 block">
-          <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="اكتب الاسم أو الرقم الوطني..."
-            className="w-full rounded-lg border py-3 pl-4 pr-10"
-          />
-        </span>
-      </label>
-      <div className="mt-6 rounded-lg border border-dashed bg-gray-50 p-8 text-center text-sm text-gray-500">
-        {query ? 'لا توجد ملفات مؤرشفة مطابقة لبحثك.' : 'لا توجد ملفات مؤرشفة للعرض حالياً.'}
-      </div>
-    </section>
+export default async function ArchiveDashboard() {
+  const cookieStore = await cookies()
+  const claims = verifyModuleAccessToken(
+    cookieStore.get(MODULE_ACCESS_COOKIES.archive)?.value,
+    'archive',
   )
+  if (!claims) redirect('/archive/login')
+
+  const actorResult = await getAuthenticatedActor()
+  if ('error' in actorResult) redirect('/login')
+
+  const initialData = await searchDocuments()
+  if ('error' in initialData) {
+    return <ArchiveClient initialData={null} initialError={initialData.error} />
+  }
+
+  return <ArchiveClient initialData={initialData} initialError="" />
 }

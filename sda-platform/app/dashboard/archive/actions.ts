@@ -410,7 +410,10 @@ export async function completeArchiveDocumentUploads(
     if (warning) warnings.push(`المستند ${item.documentNumber}: ${warning}`)
   }
 
-  if (uploaded.length) revalidatePath('/dashboard/archive')
+  if (uploaded.length) {
+    revalidatePath('/dashboard/archive')
+    revalidatePath('/archive/dashboard')
+  }
   return { uploaded, errors, warnings }
 }
 
@@ -498,6 +501,7 @@ export async function approveDocument(
   if (error) return { error: `تعذر تحديث حالة المستند: ${error.message}` }
   const warning = await writeAudit('update', `تغيير حالة المستند ${document.document_number} إلى ${status === 'approved' ? 'معتمد' : 'مرفوض'} بواسطة ${context.actorName}`)
   revalidatePath('/dashboard/archive')
+  revalidatePath('/archive/dashboard')
   return warning
     ? { success: true, warning }
     : { success: true }
@@ -529,6 +533,7 @@ export async function deleteArchiveDocument(id: string): Promise<
   const auditWarning = await writeAudit('delete', `حذف مستند الأرشيف ${document.document_number}`)
   if (auditWarning) warnings.push(`تعذر تسجيل الحركة: ${auditWarning}`)
   revalidatePath('/dashboard/archive')
+  revalidatePath('/archive/dashboard')
   return { success: true, ...(warnings.length ? { warning: warnings.join(' ') } : {}) }
 }
 

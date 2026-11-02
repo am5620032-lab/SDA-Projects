@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import ArchiveDashboard from './archive-dashboard'
 
 export default function ArchiveDashboardPage() {
-  redirect('/dashboard/archive')
+  return <ArchiveDashboard />
 }
