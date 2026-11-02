@@ -1,37 +1,18 @@
 'use client'
 
 import {
-  ArrowLeftRight,
-  Building2,
-  CalendarCheck2,
-  CalendarDays,
-  ChevronDown,
-  ClipboardCheck,
   DatabaseBackup,
-  FileText,
-  GraduationCap,
   LayoutDashboard,
-  KeyRound,
   LogOut,
-  Mail,
   Menu,
-  Network,
-  Package,
-  Scale,
-  ShieldCheck,
   ScrollText,
   Settings,
-  ChartNoAxesCombined,
   UsersRound,
   X,
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useState } from 'react'
 import { logoutFromPlatform } from '@/app/actions/logout'
-import NotificationBell from '@/components/layout/NotificationBell'
-import type { EmployeeNotification } from '@/app/actions/notifications'
 
 function NavigationLink({
   href,
@@ -42,141 +23,58 @@ function NavigationLink({
   children: React.ReactNode
   onClick?: () => void
 }) {
-  const pathname = usePathname()
-  const active = pathname === href
-
   return (
     <Link
       href={href}
       onClick={onClick}
-      aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-        active ? 'bg-emerald-50 font-bold text-[#157A3F]' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-      }`}
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-emerald-50 hover:font-bold hover:text-[#157A3F]"
     >
       {children}
     </Link>
   )
 }
 
-export default function Sidebar({
-  hasHrAccess,
-  initialNotifications,
-}: {
-  hasHrAccess: boolean
-  initialNotifications: EmployeeNotification[]
-}) {
-  const pathname = usePathname()
-  const [userRole, setUserRole] = useState('')
+export default function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [employeesExpanded, setEmployeesExpanded] = useState(() => (
-    hasHrAccess && pathname.startsWith('/dashboard/employees')
-  ))
-  const canManageModules = userRole === 'it_manager' || userRole === 'admin_manager'
-  const canAccessProjects = ['president', 'vice_president', 'it_manager', 'admin_manager'].includes(userRole)
-  const supabase = useMemo(() => createClient(), [])
-
-  useEffect(() => {
-    let active = true
-    const fetchRole = async () => {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user) return
-      const { data, error } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      if (!error && active) setUserRole(data.role)
-    }
-
-    void fetchRole()
-    return () => { active = false }
-  }, [supabase])
-
   const closeMobileMenu = () => setIsMobileOpen(false)
+
   const navigation = (
     <>
-      <NavigationLink href="/dashboard" onClick={closeMobileMenu}>
-        <LayoutDashboard size={18} aria-hidden="true" />
-        لوحة التحكم
-      </NavigationLink>
-
-      {hasHrAccess ? (
-      <>
-      <NotificationBell initialNotifications={initialNotifications} />
       <section>
-        <button
-          type="button"
-          onClick={() => setEmployeesExpanded((expanded) => !expanded)}
-          aria-expanded={employeesExpanded}
-          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-right text-sm font-bold text-gray-800 transition hover:bg-gray-50"
-        >
-          <span className="flex items-center gap-3"><UsersRound size={18} className="text-[#157A3F]" aria-hidden="true" />منظومة شؤون الموظفين</span>
-          <ChevronDown size={16} className={`transition-transform ${employeesExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
-        </button>
-        {employeesExpanded && (
-          <nav aria-label="أقسام شؤون الموظفين" className="mr-3 mt-1 space-y-1 border-r border-gray-200 pr-3">
-            <NavigationLink href="/dashboard/employees" onClick={closeMobileMenu}><UsersRound size={16} aria-hidden="true" />إدارة الموظفين</NavigationLink>
-            <NavigationLink href="/dashboard/employees/organization" onClick={closeMobileMenu}><Network size={16} aria-hidden="true" />الهيكل التنظيمي</NavigationLink>
-            <NavigationLink href="/dashboard/employees/attendance" onClick={closeMobileMenu}><CalendarCheck2 size={16} aria-hidden="true" />الحضور والانصراف</NavigationLink>
-            <NavigationLink href="/dashboard/leaves" onClick={closeMobileMenu}><CalendarDays size={16} aria-hidden="true" />الإجازات</NavigationLink>
-            <NavigationLink href="/dashboard/employees/promotions" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />الترقيات والعلاوات</NavigationLink>
-            <NavigationLink href="/dashboard/employees/decisions" onClick={closeMobileMenu}><FileText size={16} aria-hidden="true" />القرارات الإدارية</NavigationLink>
-            <NavigationLink href="/dashboard/employees/reports" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />التقارير والتصدير</NavigationLink>
-            <NavigationLink href="/dashboard/employees/archive" onClick={closeMobileMenu}><FileText size={16} aria-hidden="true" />أرشيف ملفات الموظفين</NavigationLink>
-            <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
-            <NavigationLink href="/dashboard/employees/assets" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
-            <NavigationLink href="/dashboard/employees/penalties" onClick={closeMobileMenu}><Scale size={16} aria-hidden="true" />الجزاءات والمخالفات</NavigationLink>
-            <NavigationLink href="/dashboard/employees/trainings" onClick={closeMobileMenu}><GraduationCap size={16} aria-hidden="true" />التدريب والتطوير</NavigationLink>
-            <NavigationLink href="/dashboard/employees/evaluations" onClick={closeMobileMenu}><ClipboardCheck size={16} aria-hidden="true" />تقييم الأداء</NavigationLink>
-            <NavigationLink href="/dashboard/employees/clearances" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />إخلاء الطرف</NavigationLink>
-            <NavigationLink href="/dashboard/employees/correspondences" onClick={closeMobileMenu}><Mail size={16} aria-hidden="true" />المراسلات الإدارية</NavigationLink>
-          </nav>
-        )}
+        <h2 className="mb-2 px-3 text-xs font-bold text-gray-400">الإدارة العليا</h2>
+        <div className="space-y-1">
+          <NavigationLink href="/dashboard" onClick={closeMobileMenu}>
+            <LayoutDashboard size={18} aria-hidden="true" />
+            لوحة التحكم
+          </NavigationLink>
+          <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}>
+            <UsersRound size={18} aria-hidden="true" />
+            إدارة المستخدمين
+          </NavigationLink>
+          <NavigationLink href="/dashboard/audit-logs" onClick={closeMobileMenu}>
+            <ScrollText size={18} aria-hidden="true" />
+            سجل العمليات
+          </NavigationLink>
+          <NavigationLink href="/dashboard/settings" onClick={closeMobileMenu}>
+            <Settings size={18} aria-hidden="true" />
+            إعدادات النظام
+          </NavigationLink>
+          <NavigationLink href="/dashboard/backup" onClick={closeMobileMenu}>
+            <DatabaseBackup size={18} aria-hidden="true" />
+            النسخ الاحتياطي
+          </NavigationLink>
+        </div>
       </section>
-      </>
-      ) : (
-        <NavigationLink href="/hr/login" onClick={closeMobileMenu}>
-          <UsersRound size={18} className="text-[#157A3F]" aria-hidden="true" />
-          منظومة شؤون الموظفين
-        </NavigationLink>
-      )}
 
-      {canManageModules && (
-        <section>
-          <h2 className="px-3 pb-1 text-xs font-bold text-gray-400">الإدارة العليا</h2>
-          <nav aria-label="الإدارة العليا" className="space-y-1">
-            <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}>
-              <UsersRound size={18} aria-hidden="true" />إدارة المستخدمين
-            </NavigationLink>
-            <NavigationLink href="/dashboard/audit-logs" onClick={closeMobileMenu}>
-              <ScrollText size={18} aria-hidden="true" />سجل العمليات
-            </NavigationLink>
-            <NavigationLink href="/dashboard/reports" onClick={closeMobileMenu}>
-              <ChartNoAxesCombined size={18} aria-hidden="true" />التقارير والإحصائيات
-            </NavigationLink>
-            <NavigationLink href="/dashboard/settings" onClick={closeMobileMenu}>
-              <Settings size={18} aria-hidden="true" />إعدادات النظام
-            </NavigationLink>
-            <NavigationLink href="/dashboard/backup" onClick={closeMobileMenu}>
-              <DatabaseBackup size={18} aria-hidden="true" />النسخ الاحتياطي
-            </NavigationLink>
-            <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}>
-              <KeyRound size={18} aria-hidden="true" />إدارة صلاحيات المنظومات
-            </NavigationLink>
-          </nav>
-        </section>
-      )}
-
-      {canAccessProjects && (
-        <NavigationLink href="/dashboard/projects" onClick={closeMobileMenu}>
-          <Building2 size={18} className="text-amber-600" aria-hidden="true" />
-          المشروعات والاستثمار
-        </NavigationLink>
-      )}
-
-      <form action={logoutFromPlatform} className="pt-2">
-        <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50">
-          <LogOut size={18} aria-hidden="true" /> تسجيل الخروج من المنصة
+      <form action={logoutFromPlatform} className="mt-auto border-t border-gray-100 pt-4">
+        <button
+          type="submit"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+        >
+          <LogOut size={18} aria-hidden="true" />
+          تسجيل الخروج من المنصة
         </button>
       </form>
-
     </>
   )
 
@@ -184,20 +82,26 @@ export default function Sidebar({
     <>
       <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-white px-4 py-3 md:hidden" dir="rtl">
         <Link href="/dashboard" className="font-bold text-[#157A3F]">بوابة المنظومات</Link>
-        <button type="button" onClick={() => setIsMobileOpen((open) => !open)} aria-label={isMobileOpen ? 'إغلاق القائمة' : 'فتح القائمة'} aria-expanded={isMobileOpen} className="rounded-lg p-2 text-gray-700 hover:bg-gray-100">
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen((open) => !open)}
+          aria-label={isMobileOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+          aria-expanded={isMobileOpen}
+          className="rounded-lg p-2 text-gray-700 hover:bg-gray-100"
+        >
           {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
-      <aside dir="rtl" className="hidden min-h-screen w-72 shrink-0 border-l bg-white p-4 md:block">
+      <aside dir="rtl" className="hidden min-h-screen w-72 shrink-0 flex-col border-l bg-white p-4 md:flex">
         <Link href="/dashboard" className="mb-6 flex items-center gap-3 border-b pb-5">
           <img src="/logo.jpg" alt="شعار الجهاز" className="h-10 w-auto object-contain" />
           <span className="font-bold text-[#157A3F]">بوابة المنظومات</span>
         </Link>
-        <nav aria-label="القائمة الرئيسية" className="space-y-3">{navigation}</nav>
+        <nav aria-label="القائمة الرئيسية" className="flex flex-1 flex-col gap-3">{navigation}</nav>
       </aside>
       {isMobileOpen && (
-        <aside dir="rtl" className="border-b bg-white p-4 shadow-sm md:hidden">
-          <nav aria-label="القائمة الرئيسية" className="space-y-3">{navigation}</nav>
+        <aside dir="rtl" className="flex min-h-[calc(100vh-57px)] flex-col border-b bg-white p-4 shadow-sm md:hidden">
+          <nav aria-label="القائمة الرئيسية" className="flex flex-1 flex-col gap-3">{navigation}</nav>
         </aside>
       )}
     </>
