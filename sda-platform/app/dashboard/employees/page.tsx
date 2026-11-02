@@ -204,7 +204,7 @@ export default function EmployeesPage() {
       direct_manager_id: formData.direct_manager_id || null,
     };
 
-    let saveError
+    let saveError: { code: string; message: string } | null = null
     if (editingId) {
       const { error } = await supabase.from('employees').update(dataToSave).eq('id', editingId)
       saveError = error
@@ -216,6 +216,11 @@ export default function EmployeesPage() {
       saveError = error
     }
     if (saveError) {
+      if (saveError.code === '23505') {
+        alert('الرقم الوطني مسجل بالفعل لموظف آخر.')
+        setLoading(false)
+        return
+      }
       alert(`تعذر حفظ بيانات الموظف: ${saveError.message}`)
       setLoading(false)
       return
@@ -809,7 +814,7 @@ export default function EmployeesPage() {
                         <option value="">غير محددة</option>
                         {departments.map((department) => (
                           <option key={department.id} value={department.id}>
-                            {department.name}{department.type ? ` (${department.type})` : ''}
+                            {department.type ? `${department.name} - ${department.type}` : department.name}
                           </option>
                         ))}
                       </select>
@@ -819,7 +824,9 @@ export default function EmployeesPage() {
                       <select value={formData.direct_manager_id} onChange={(e) => setFormData({ ...formData, direct_manager_id: e.target.value })} className="w-full rounded-lg border px-4 py-2">
                         <option value="">غير محدد</option>
                         {employees.filter((employee) => employee.id !== editingId).map((employee) => (
-                          <option key={employee.id} value={employee.id}>{employee.full_name}</option>
+                          <option key={employee.id} value={employee.id}>
+                            {employee.full_name}{employee.job_title ? ` - ${employee.job_title}` : ''}
+                          </option>
                         ))}
                       </select>
                     </div>

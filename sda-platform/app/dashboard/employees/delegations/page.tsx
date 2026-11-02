@@ -25,7 +25,17 @@ function getDelegationDurationDays(startDate: string | null): number | null {
 
   const today = new Date()
   const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
-  return Math.max(0, Math.floor((todayUtc - startTimestamp) / 86_400_000))
+  return Math.max(0, Math.floor((todayUtc - startTimestamp) / 86_400_000) + 1)
+}
+
+function formatDelegationDuration(days: number): string {
+  if (days < 30) return `${days} يوم`
+
+  const months = Math.floor(days / 30)
+  const remainingDays = days % 30
+  return remainingDays > 0
+    ? `${months} شهر و${remainingDays} يوم`
+    : `${months} شهر`
 }
 
 export default function DelegationsPage() {
@@ -131,7 +141,7 @@ export default function DelegationsPage() {
                         <td className="p-3">{employee.job_title || '-'} / {employee.department || '-'}</td>
                         <td className="p-3">{employee.delegation_entity || '-'}</td>
                         <td className="p-3">{employee.delegation_start_date || '-'}</td>
-                        <td className="p-3">{durationDays === null ? 'غير محدد' : `${durationDays} يوم`}</td>
+                        <td className="p-3">{durationDays === null ? 'غير محدد' : formatDelegationDuration(durationDays)}</td>
                         <td className="p-3">{employee.branch || 'الإدارة الرئيسيه / طرابلس'}</td>
                         <td className="p-3" dir="ltr">{employee.phone || '-'}</td>
                       </tr>
