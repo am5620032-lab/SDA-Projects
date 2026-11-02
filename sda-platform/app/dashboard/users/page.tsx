@@ -32,7 +32,7 @@ export default async function UsersPage() {
     .single()
 
   if (profileError) throw new Error(`تعذر التحقق من صلاحية المستخدم: ${profileError.message}`)
-  if (profile?.role !== 'it_manager') redirect('/dashboard')
+  if (!['it_manager', 'admin_manager'].includes(profile?.role ?? '')) redirect('/dashboard')
 
   return <UsersClient currentUserId={user.id} />
 }

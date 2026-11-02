@@ -13,7 +13,9 @@ export interface AuditLog {
 export async function getAuditLogs(): Promise<{ logs: AuditLog[] } | { error: string }> {
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) return actorResult
-  if (actorResult.actor.role !== 'it_manager') return { error: 'ليس لديك صلاحية عرض سجل الحركات.' }
+  if (!['it_manager', 'admin_manager'].includes(actorResult.actor.role)) {
+    return { error: 'ليس لديك صلاحية عرض سجل الحركات.' }
+  }
 
   const adminResult = createSupabaseAdminClient()
   if ('error' in adminResult) return adminResult

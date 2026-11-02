@@ -46,7 +46,9 @@ export async function createUser(input: CreateUserInput): Promise<{ success: tru
 
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) return actorResult
-  if (actorResult.actor.role !== 'it_manager') return { error: 'ليس لديك صلاحية إنشاء المستخدمين.' }
+  if (!['it_manager', 'admin_manager'].includes(actorResult.actor.role)) {
+    return { error: 'ليس لديك صلاحية إنشاء المستخدمين.' }
+  }
 
   const adminResult = createSupabaseAdminClient()
   if ('error' in adminResult) return adminResult

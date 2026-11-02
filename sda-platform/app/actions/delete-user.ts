@@ -6,7 +6,9 @@ import { logAction } from './log-action'
 export async function deleteUser(id: string): Promise<{ success: true; warning?: string } | { error: string }> {
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) return actorResult
-  if (actorResult.actor.role !== 'it_manager') return { error: 'ليس لديك صلاحية حذف المستخدمين.' }
+  if (!['it_manager', 'admin_manager'].includes(actorResult.actor.role)) {
+    return { error: 'ليس لديك صلاحية حذف المستخدمين.' }
+  }
   if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     return { error: 'معرّف المستخدم غير صالح.' }
   }

@@ -12,7 +12,9 @@ export interface ManagedUser {
 export async function getAllUsers(): Promise<{ users: ManagedUser[] } | { error: string }> {
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) return actorResult
-  if (actorResult.actor.role !== 'it_manager') return { error: 'ليس لديك صلاحية عرض المستخدمين.' }
+  if (!['it_manager', 'admin_manager'].includes(actorResult.actor.role)) {
+    return { error: 'ليس لديك صلاحية عرض المستخدمين.' }
+  }
 
   const adminResult = createSupabaseAdminClient()
   if ('error' in adminResult) return adminResult

@@ -47,11 +47,13 @@ function NavigationLink({
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ hasHrAccess }: { hasHrAccess: boolean }) {
   const pathname = usePathname()
   const [userRole, setUserRole] = useState('')
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [employeesExpanded, setEmployeesExpanded] = useState(() => pathname.startsWith('/dashboard/employees'))
+  const [employeesExpanded, setEmployeesExpanded] = useState(() => (
+    hasHrAccess && pathname.startsWith('/dashboard/employees')
+  ))
   const canManageModules = userRole === 'it_manager' || userRole === 'admin_manager'
   const supabase = useMemo(() => createClient(), [])
 
@@ -76,6 +78,7 @@ export default function Sidebar() {
         لوحة التحكم
       </NavigationLink>
 
+      {hasHrAccess ? (
       <section>
         <button
           type="button"
@@ -95,10 +98,22 @@ export default function Sidebar() {
             <NavigationLink href="/dashboard/employees/promotions" onClick={closeMobileMenu}><ShieldCheck size={16} aria-hidden="true" />الترقيات والعلاوات</NavigationLink>
             <NavigationLink href="/dashboard/employees/delegations" onClick={closeMobileMenu}><ArrowLeftRight size={16} aria-hidden="true" />الندب والإعارة</NavigationLink>
             <NavigationLink href="/dashboard/employees/custody" onClick={closeMobileMenu}><Package size={16} aria-hidden="true" />العهد والأمانات</NavigationLink>
-            {userRole === 'it_manager' && <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}><UsersRound size={16} aria-hidden="true" />إدارة المستخدمين</NavigationLink>}
           </nav>
         )}
       </section>
+      ) : (
+        <NavigationLink href="/hr/login" onClick={closeMobileMenu}>
+          <UsersRound size={18} className="text-[#157A3F]" aria-hidden="true" />
+          منظومة شؤون الموظفين
+        </NavigationLink>
+      )}
+
+      {canManageModules && (
+        <NavigationLink href="/dashboard/users" onClick={closeMobileMenu}>
+          <UsersRound size={18} aria-hidden="true" />
+          إدارة المستخدمين
+        </NavigationLink>
+      )}
 
       {canManageModules && (
         <NavigationLink href="/dashboard/settings/modules" onClick={closeMobileMenu}>
