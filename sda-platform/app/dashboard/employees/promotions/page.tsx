@@ -1,5 +1,5 @@
  'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -27,22 +27,36 @@ export default function PromotionsPage() {
   const [formData, setFormData] = useState({ employee_id: '', old_grade: '', new_grade: '', promotion_date: '', notes: '' })
 
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return; }
+    if (!user) {
+      router.push('/login')
+      return null
+    }
 
     const { data: emps } = await supabase.from('employees').select('id, full_name, grade')
-    if (emps) setEmployees(emps)
-
     const { data: proms } = await supabase.from('promotions').select('*, employees(full_name)').order('promotion_date', { ascending: false })
-    if (proms) setPromotions(proms)
-    
-    setLoading(false)
-  }
+    return { employees: emps ?? [], promotions: proms ?? [] }
+  }, [router, supabase])
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    let active = true
+
+    void fetchData().then((data) => {
+      if (!active) return
+      if (data) {
+        setEmployees(data.employees)
+        setPromotions(data.promotions)
+      }
+      setLoading(false)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [fetchData])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -53,7 +67,11 @@ export default function PromotionsPage() {
       await supabase.from('employees').update({ grade: formData.new_grade }).eq('id', formData.employee_id)
       setFormData({ employee_id: '', old_grade: '', new_grade: '', promotion_date: '', notes: '' })
       setIsModalOpen(false)
-      fetchData()
+      const data = await fetchData()
+      if (data) {
+        setEmployees(data.employees)
+        setPromotions(data.promotions)
+      }
     }
   }
 
