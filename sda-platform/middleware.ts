@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 
 const archiveCookieName = 'archive_access_token'
 const hrCookieName = 'hr_access_token'
+const projectsCookieName = 'projects_access_token'
 
 function decodeBase64Url(value: string) {
   const base64 = value.replace(/-/g, '+').replace(/_/g, '/')
@@ -10,7 +11,7 @@ function decodeBase64Url(value: string) {
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))
 }
 
-async function hasValidModuleCookie(token: string | undefined, expectedModule: 'archive' | 'hr') {
+async function hasValidModuleCookie(token: string | undefined, expectedModule: 'archive' | 'hr' | 'projects') {
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!secret || !token) return false
 
@@ -52,7 +53,11 @@ export async function middleware(request: NextRequest) {
   const hasPlatformSession = request.cookies.getAll().some(({ name }) => (
     name.startsWith('sb-wwkqubtedygxwmjhhoza-auth-token')
   ))
-  const isModulePath = pathname.startsWith('/archive/') || pathname.startsWith('/hr/')
+  const isProjectsPath = pathname.startsWith('/dashboard/projects')
+  const isModulePath = pathname.startsWith('/archive/')
+    || pathname.startsWith('/hr/')
+    || pathname === '/projects/login'
+    || isProjectsPath
   if (
     (isModulePath || pathname.startsWith('/dashboard/employees') || pathname.startsWith('/dashboard/leaves') || pathname.startsWith('/dashboard/attendance'))
     && !hasPlatformSession
@@ -73,6 +78,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/hr/login', request.url))
   }
 
+  if (isProjectsPath && !(await hasValidModuleCookie(request.cookies.get(projectsCookieName)?.value, 'projects'))) {
+    return NextResponse.redirect(new URL('/projects/login', request.url))
+  }
+
   if (!hasPlatformSession && pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -86,5 +95,6 @@ export const config = {
     '/dashboard/:path*',
     '/archive/:path*',
     '/hr/:path*',
+    '/projects/login',
   ],
 }

@@ -92,7 +92,7 @@ export default function Sidebar() {
     { href: '/dashboard/attendance', label: 'الحضور والانصراف', icon: CalendarDays },
     { href: '/dashboard/leaves', label: 'الإجازات', icon: Plane },
     { href: '/dashboard/employees/decisions', label: 'القرارات الإدارية', icon: FileCheck2 },
-    { href: '/dashboard/employees/delegations', label: 'الإيفاد والتكليف', icon: ClipboardCheck },
+    { href: '/dashboard/employees/delegations', label: 'الندب والإعارة', icon: ClipboardCheck },
     { href: '/dashboard/employees/promotions', label: 'الترقيات', icon: Scale },
     { href: '/dashboard/employees/evaluations', label: 'تقييم الأداء', icon: UserRoundCheck },
     { href: '/dashboard/employees/trainings', label: 'التدريب والتطوير', icon: GraduationCap },

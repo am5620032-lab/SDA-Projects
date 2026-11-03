@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Archive, LockKeyhole, UsersRound } from 'lucide-react'
+import { Archive, Building2, LockKeyhole, UsersRound } from 'lucide-react'
 import { moduleLogin } from '@/app/actions/module-login'
 import type { ModuleName } from '@/app/actions/module-login'
 
@@ -18,7 +18,7 @@ export default function ModuleLoginForm({
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const Icon = moduleName === 'archive' ? Archive : UsersRound
+  const Icon = moduleName === 'archive' ? Archive : moduleName === 'hr' ? UsersRound : Building2
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -30,7 +30,11 @@ export default function ModuleLoginForm({
         setError(result.error)
         return
       }
-      router.replace(moduleName === 'archive' ? '/dashboard/archive' : '/dashboard/employees')
+      router.replace(moduleName === 'archive'
+        ? '/dashboard/archive'
+        : moduleName === 'hr'
+          ? '/dashboard/employees'
+          : '/dashboard/projects')
       router.refresh()
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'تعذر تسجيل الدخول إلى المنظومة.')

@@ -8,6 +8,7 @@ export interface ManagedUser {
   email: string | null
   role: string | null
   national_id: string | null
+  employee_id: string | null
   is_active: boolean
 }
 
@@ -58,6 +59,7 @@ export async function getAllUsers(): Promise<{ users: ManagedUser[] } | { error:
       email: user.email ?? null,
       role: profile?.role ?? null,
       national_id: employee?.national_id ?? null,
+      employee_id: employee?.id ?? null,
       is_active: !user.banned_until || new Date(user.banned_until).getTime() <= Date.now(),
     }
   })

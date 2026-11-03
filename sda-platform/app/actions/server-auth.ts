@@ -218,7 +218,7 @@ export interface AdminDatabase {
         Row: {
           id: string
           employee_id: string
-          module_name: 'archive' | 'hr'
+          module_name: 'archive' | 'hr' | 'projects'
           username: string
           password_hash: string
           is_active: boolean
@@ -227,7 +227,7 @@ export interface AdminDatabase {
         Insert: {
           id?: string
           employee_id: string
-          module_name: 'archive' | 'hr'
+          module_name: 'archive' | 'hr' | 'projects'
           username: string
           password_hash: string
           is_active?: boolean
@@ -236,7 +236,7 @@ export interface AdminDatabase {
         Update: {
           id?: string
           employee_id?: string
-          module_name?: 'archive' | 'hr'
+          module_name?: 'archive' | 'hr' | 'projects'
           username?: string
           password_hash?: string
           is_active?: boolean

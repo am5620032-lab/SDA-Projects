@@ -52,7 +52,7 @@ export default function Dashboard() {
     {
       title: 'منظومة المشروعات والاستثمار',
       description: 'مركز القيادة الاستراتيجي لمحفظة التنمية الوطنية: متابعة المشاريع والميزانيات والأولويات والاحتياجات عبر البلديات والقطاعات.',
-      href: '/dashboard/projects',
+      href: '/projects/login',
       icon: Building2,
       iconClass: 'bg-amber-300/15 text-amber-300',
       featured: true,

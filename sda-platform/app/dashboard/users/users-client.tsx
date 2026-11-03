@@ -3,11 +3,18 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Archive, Building2, KeyRound, UsersRound } from 'lucide-react'
 import { createUser } from '@/app/actions/create-user'
 import { deleteUser } from '@/app/actions/delete-user'
 import { getAllUsers, type ManagedUser } from '@/app/actions/get-all-users'
 import { getAuditLogs, type AuditLog } from '@/app/actions/get-audit-logs'
 import { setUserBanned, updateUserRole } from '@/app/actions/manage-user'
+import {
+  createModuleAccess,
+  type ModuleAccount,
+  type ModuleEmployee,
+  type ModuleName,
+} from '@/app/dashboard/settings/modules/actions'
 
 type UserRole = 'president' | 'vice_president' | 'admin_manager' | 'employee'
 
@@ -21,8 +28,17 @@ const roleLabels: Record<string, string> = {
 
 const actionLabels = { add: 'إضافة', update: 'تعديل', delete: 'حذف' } as const
 
-export default function UsersClient({ currentUserId }: { currentUserId: string }) {
+export default function UsersClient({
+  currentUserId,
+  initialModuleAccounts,
+  moduleEmployees,
+}: {
+  currentUserId: string
+  initialModuleAccounts: ModuleAccount[]
+  moduleEmployees: ModuleEmployee[]
+}) {
   const [users, setUsers] = useState<ManagedUser[]>([])
+  const [moduleAccounts, setModuleAccounts] = useState(initialModuleAccounts)
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [auditError, setAuditError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -32,6 +48,15 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
   const [roleDrafts, setRoleDrafts] = useState<Record<string, string>>({})
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [roleUser, setRoleUser] = useState<ManagedUser | null>(null)
+  const [moduleModalOpen, setModuleModalOpen] = useState(false)
+  const [moduleSaving, setModuleSaving] = useState(false)
+  const [moduleError, setModuleError] = useState('')
+  const [moduleForm, setModuleForm] = useState({
+    employeeId: '',
+    moduleName: 'hr' as ModuleName,
+    username: '',
+    password: '',
+  })
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [formData, setFormData] = useState({
@@ -136,6 +161,27 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
     }
   }
 
+  const handleModuleAccessSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setModuleSaving(true)
+    setModuleError('')
+    try {
+      const result = await createModuleAccess(moduleForm)
+      if ('error' in result) {
+        setModuleError(result.error)
+        return
+      }
+      setModuleAccounts((current) => [result.account, ...current])
+      setModuleModalOpen(false)
+      setModuleForm({ employeeId: '', moduleName: 'hr', username: '', password: '' })
+      setSuccessMessage('تم حفظ صلاحية المنظومة بنجاح.')
+    } catch (error) {
+      setModuleError(error instanceof Error ? error.message : 'تعذر حفظ صلاحية المنظومة.')
+    } finally {
+      setModuleSaving(false)
+    }
+  }
+
   const handleBanToggle = async (user: ManagedUser) => {
     setUpdatingId(user.id)
     setErrorMessage('')
@@ -179,12 +225,27 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
           <section className="rounded-xl bg-white p-6 shadow-sm">
             <div className="mb-6 flex flex-col items-center justify-between gap-4 border-b pb-4 sm:flex-row">
               <h2 className="text-lg font-bold">المستخدمون ({users.length})</h2>
-              <button
-                onClick={() => { setErrorMessage(''); setIsModalOpen(true) }}
-                className="rounded-lg bg-[#157A3F] px-5 py-2 font-bold text-white hover:bg-green-800"
-              >
-                إضافة مستخدم جديد
-              </button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModuleError('')
+                    setModuleForm({ employeeId: '', moduleName: 'hr', username: '', password: '' })
+                    setModuleModalOpen(true)
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 font-bold text-emerald-800 hover:bg-emerald-100"
+                >
+                  <KeyRound size={17} aria-hidden="true" />
+                  إدارة صلاحيات المنظومات
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setErrorMessage(''); setIsModalOpen(true) }}
+                  className="rounded-lg bg-[#157A3F] px-5 py-2 font-bold text-white hover:bg-green-800"
+                >
+                  إضافة مستخدم جديد
+                </button>
+              </div>
             </div>
 
             {successMessage && <p role="status" className="mb-4 rounded-lg bg-green-50 p-3 text-green-700">{successMessage}</p>}
@@ -201,6 +262,7 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
                       <th className="p-3">البريد الإلكتروني</th>
                       <th className="p-3">الرقم الوطني</th>
                       <th className="p-3">الدور</th>
+                      <th className="p-3">المنظومات</th>
                       <th className="p-3">الحالة</th>
                       <th className="p-3 text-center">الإجراء</th>
                     </tr>
@@ -213,6 +275,37 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
                         <td className="p-3">{user.national_id || '-'}</td>
                         <td className="p-3">
                           {user.role ? roleLabels[user.role] ?? user.role : 'غير محدد'}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5">
+                            {moduleAccounts
+                              .filter((account) => account.employee_id === user.employee_id)
+                              .map((account) => {
+                                const Icon = account.module_name === 'archive'
+                                  ? Archive
+                                  : account.module_name === 'hr'
+                                    ? UsersRound
+                                    : Building2
+                                const moduleLabel = account.module_name === 'archive'
+                                  ? 'الأرشيف'
+                                  : account.module_name === 'hr'
+                                    ? 'شؤون الموظفين'
+                                    : 'المشروعات'
+                                return (
+                                  <span
+                                    key={account.id}
+                                    title={`${moduleLabel}${account.is_active ? '' : ' (موقوفة)'}`}
+                                    aria-label={`${moduleLabel}${account.is_active ? '' : ' (موقوفة)'}`}
+                                    className={`rounded-md p-1 ${account.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}
+                                  >
+                                    <Icon size={16} aria-hidden="true" />
+                                  </span>
+                                )
+                              })}
+                            {moduleAccounts.every((account) => account.employee_id !== user.employee_id) && (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3">
                           <span className={user.is_active ? 'text-green-700' : 'text-red-700'}>
@@ -292,6 +385,48 @@ export default function UsersClient({ currentUserId }: { currentUserId: string }
               </div>
             )}
           </section>
+        )}
+
+        {moduleModalOpen && canManageUsers && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+            <section role="dialog" aria-modal="true" aria-labelledby="module-access-title" className="relative my-8 w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+              <button type="button" onClick={() => setModuleModalOpen(false)} aria-label="إغلاق" className="absolute left-4 top-4 text-xl font-bold text-gray-500 hover:text-red-600">×</button>
+              <h2 id="module-access-title" className="mb-5 text-xl font-bold text-[#157A3F]">إدارة صلاحيات المنظومات</h2>
+              <form onSubmit={handleModuleAccessSubmit} className="space-y-4">
+                <label className="block text-sm font-medium">
+                  الموظف
+                  <select required value={moduleForm.employeeId} onChange={(event) => setModuleForm({ ...moduleForm, employeeId: event.target.value })} className="mt-1 w-full rounded-lg border px-4 py-2.5">
+                    <option value="">اختر الموظف</option>
+                    {moduleEmployees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}
+                  </select>
+                </label>
+                <label className="block text-sm font-medium">
+                  المنظومة
+                  <select value={moduleForm.moduleName} onChange={(event) => setModuleForm({ ...moduleForm, moduleName: event.target.value as ModuleName })} className="mt-1 w-full rounded-lg border px-4 py-2.5">
+                    <option value="hr">شؤون الموظفين</option>
+                    <option value="projects">المشروعات</option>
+                    <option value="archive">الأرشيف</option>
+                  </select>
+                </label>
+                <label className="block text-sm font-medium">
+                  اسم المستخدم
+                  <input required minLength={3} maxLength={64} pattern="[a-zA-Z0-9._-]+" autoComplete="off" value={moduleForm.username} onChange={(event) => setModuleForm({ ...moduleForm, username: event.target.value })} className="mt-1 w-full rounded-lg border px-4 py-2.5 text-left" dir="ltr" />
+                </label>
+                <label className="block text-sm font-medium">
+                  كلمة المرور
+                  <input required minLength={10} maxLength={128} type="password" autoComplete="new-password" value={moduleForm.password} onChange={(event) => setModuleForm({ ...moduleForm, password: event.target.value })} className="mt-1 w-full rounded-lg border px-4 py-2.5" />
+                  <span className="mt-1 block text-xs text-gray-500">عشرة أحرف على الأقل. تُخزّن كلمة المرور مشفرة.</span>
+                </label>
+                {moduleError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{moduleError}</p>}
+                <div className="flex gap-3 border-t pt-4">
+                  <button type="submit" disabled={moduleSaving} className="flex-1 rounded-lg bg-[#157A3F] py-2.5 font-bold text-white disabled:opacity-60">
+                    {moduleSaving ? 'جارٍ الحفظ...' : 'حفظ'}
+                  </button>
+                  <button type="button" onClick={() => setModuleModalOpen(false)} className="flex-1 rounded-lg bg-gray-100 py-2.5 font-bold text-gray-700">إلغاء</button>
+                </div>
+              </form>
+            </section>
+          </div>
         )}
 
         {roleUser && (

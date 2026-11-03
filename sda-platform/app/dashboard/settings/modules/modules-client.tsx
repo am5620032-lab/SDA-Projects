@@ -98,7 +98,7 @@ export default function ModulesClient({
                   {accounts.map((account) => (
                     <tr key={account.id} className="border-t">
                       <td className="p-4">{account.employee_name}</td>
-                      <td className="p-4">{account.module_name === 'archive' ? 'الأرشيف' : 'شؤون الموظفين'}</td>
+                      <td className="p-4">{account.module_name === 'archive' ? 'الأرشيف' : account.module_name === 'hr' ? 'شؤون الموظفين' : 'المشروعات'}</td>
                       <td className="p-4 font-mono" dir="ltr">{account.username}</td>
                       <td className="p-4">
                         <span className={`rounded-full px-3 py-1 text-xs font-bold ${account.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -135,6 +135,7 @@ export default function ModulesClient({
                   <select value={form.moduleName} onChange={(event) => setForm({ ...form, moduleName: event.target.value as ModuleName })} className="mt-1 w-full rounded-lg border px-3 py-2.5">
                     <option value="archive">الأرشيف</option>
                     <option value="hr">شؤون الموظفين</option>
+                    <option value="projects">المشروعات</option>
                   </select>
                 </label>
                 <label className="block text-sm font-semibold">

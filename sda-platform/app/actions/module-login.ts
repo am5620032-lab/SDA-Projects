@@ -7,9 +7,10 @@ import { createSupabaseAdminClient, getAuthenticatedActor } from '@/app/actions/
 import {
   MODULE_ACCESS_COOKIES,
   createModuleAccessToken,
+  type ModuleName,
 } from '@/app/archive/module-auth'
 
-export type ModuleName = 'archive' | 'hr'
+export type { ModuleName } from '@/app/archive/module-auth'
 
 export async function moduleLogin(
   moduleName: ModuleName,
@@ -17,13 +18,17 @@ export async function moduleLogin(
   password: string,
 ): Promise<{ success: true } | { error: string }> {
   if (
-    (moduleName !== 'archive' && moduleName !== 'hr')
+    (moduleName !== 'archive' && moduleName !== 'hr' && moduleName !== 'projects')
     || typeof username !== 'string'
     || typeof password !== 'string'
   ) return { error: 'يرجى التحقق من بيانات الدخول.' }
 
   const actorResult = await getAuthenticatedActor()
   if ('error' in actorResult) return { error: 'سجّل الدخول إلى المنصة بالبريد الإلكتروني أولاً.' }
+  if (
+    moduleName === 'projects'
+    && !['president', 'vice_president', 'admin_manager', 'it_manager'].includes(actorResult.actor.role)
+  ) return { error: 'ليس لديك صلاحية الدخول إلى منظومة المشروعات.' }
 
   const normalizedUsername = username.trim().toLowerCase()
   if (!/^[a-zA-Z0-9._-]{3,64}$/.test(normalizedUsername) || !password || password.length > 128) {
@@ -63,10 +68,10 @@ export async function moduleLogin(
 }
 
 export async function logoutFromModule(moduleName: ModuleName) {
-  if (moduleName !== 'archive' && moduleName !== 'hr') {
+  if (moduleName !== 'archive' && moduleName !== 'hr' && moduleName !== 'projects') {
     throw new Error('المنظومة المطلوبة غير صالحة.')
   }
   const cookieStore = await cookies()
   cookieStore.delete(MODULE_ACCESS_COOKIES[moduleName])
-  redirect(moduleName === 'archive' ? '/archive/login' : '/hr/login')
+  redirect(moduleName === 'archive' ? '/archive/login' : moduleName === 'hr' ? '/hr/login' : '/projects/login')
 }

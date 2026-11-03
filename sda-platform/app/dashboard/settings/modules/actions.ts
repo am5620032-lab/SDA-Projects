@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs'
 import { createSupabaseAdminClient, getAuthenticatedActor } from '@/app/actions/server-auth'
 
-export type ModuleName = 'archive' | 'hr'
+export type ModuleName = 'archive' | 'hr' | 'projects'
 
 export interface ModuleAccount {
   id: string
@@ -75,7 +75,7 @@ export async function createModuleAccess(input: {
   const username = typeof input.username === 'string' ? input.username.trim().toLowerCase() : ''
   const password = typeof input.password === 'string' ? input.password : ''
   if (!employeeId) return { error: 'يرجى اختيار الموظف.' }
-  if (input.moduleName !== 'archive' && input.moduleName !== 'hr') return { error: 'المنظومة المحددة غير صالحة.' }
+  if (!['archive', 'hr', 'projects'].includes(input.moduleName)) return { error: 'المنظومة المحددة غير صالحة.' }
   if (!/^[a-zA-Z0-9._-]{3,64}$/.test(username)) {
     return { error: 'اسم المستخدم يجب أن يتكون من 3 إلى 64 حرفاً أو رقماً.' }
   }

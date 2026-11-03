@@ -23,5 +23,6 @@ export async function logoutFromPlatform() {
 
   cookieStore.delete('archive_access_token')
   cookieStore.delete('hr_access_token')
+  cookieStore.delete('projects_access_token')
   redirect('/login')
 }

@@ -5,12 +5,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 export const MODULE_ACCESS_COOKIES = {
   archive: 'archive_access_token',
   hr: 'hr_access_token',
+  projects: 'projects_access_token',
 } as const
 export const MODULE_ACCESS_COOKIE_MAX_AGE = 8 * 60 * 60
 
+export type ModuleName = 'archive' | 'hr' | 'projects'
+
 export interface ModuleAccessClaims {
   employeeId: string
-  module: 'archive' | 'hr'
+  module: ModuleName
   exp: number
 }
 

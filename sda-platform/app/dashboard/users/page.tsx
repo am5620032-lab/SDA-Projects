@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/utils/supabase/config'
+import { getModuleAccessData } from '@/app/dashboard/settings/modules/actions'
 import UsersClient from './users-client'
 
 export default async function UsersPage() {
@@ -34,5 +35,14 @@ export default async function UsersPage() {
   if (profileError) throw new Error(`تعذر التحقق من صلاحية المستخدم: ${profileError.message}`)
   if (!['it_manager', 'admin_manager'].includes(profile?.role ?? '')) redirect('/dashboard')
 
-  return <UsersClient currentUserId={user.id} />
+  const moduleAccessResult = await getModuleAccessData()
+  if ('error' in moduleAccessResult) throw new Error(moduleAccessResult.error)
+
+  return (
+    <UsersClient
+      currentUserId={user.id}
+      initialModuleAccounts={moduleAccessResult.accounts}
+      moduleEmployees={moduleAccessResult.employees}
+    />
+  )
 }
