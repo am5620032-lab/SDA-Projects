@@ -4,7 +4,8 @@ import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { Printer, X } from 'lucide-react'
 import { logAction } from '@/app/actions/log-action'
-import { getEmployeesDashboardData } from '@/app/dashboard/employees/actions'
+import { deleteEmployee, getEmployeesDashboardData } from '@/app/dashboard/employees/actions'
+import { toast } from 'sonner'
 import type {
   EmployeeDashboardLeave as PendingLeave,
   EmployeeDashboardRecord as Employee,
@@ -400,22 +401,19 @@ export default function EmployeesPage() {
   const handleDelete = async (id: string) => {
     const employee = employees.find((item) => item.id === id)
     if (!window.confirm(`هل أنت متأكد من حذف الموظف ${employee?.full_name || ''}؟`)) return
-    const { error } = await supabase.from('employees').delete().eq('id', id)
-    if (error) {
-      alert(`تعذر حذف الموظف: ${error.message}`)
-      return
-    }
-
     try {
-      const auditResult = await logAction('delete', `حذف بيانات الموظف: ${employee?.full_name || id}`)
-      if ('error' in auditResult) {
-        alert(`تم حذف الموظف، لكن تعذر تسجيل الحركة: ${auditResult.error}`)
+      const result = await deleteEmployee(id)
+      if ('error' in result) {
+        toast.error(result.error)
+        return
       }
-    } catch (auditError) {
-      const message = auditError instanceof Error ? auditError.message : 'تعذر تسجيل الحركة.'
-      alert(`تم حذف الموظف، لكن تعذر تسجيل الحركة: ${message}`)
+
+      toast.success(`تم حذف الموظف ${employee?.full_name || ''} بنجاح.`)
+      if (result.warning) toast.warning(result.warning)
+      await fetchEmployees()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر حذف الموظف.')
     }
-    await fetchEmployees()
   }
 
   const openEdit = (emp: Employee) => {

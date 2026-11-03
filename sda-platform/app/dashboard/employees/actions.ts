@@ -70,6 +70,68 @@ export interface EmployeesDashboardData {
 
 type DashboardResult = { data: EmployeesDashboardData } | { error: string }
 
+export async function deleteEmployee(
+  employeeId: string,
+): Promise<{ success: true; warning?: string } | { error: string }> {
+  if (typeof employeeId !== 'string' || !employeeId.trim()) {
+    return { error: 'معرّف الموظف غير صالح.' }
+  }
+
+  const moduleEmployeeId = await getHrEmployeeId()
+  if (!moduleEmployeeId) return { error: 'سجّل الدخول إلى منظومة شؤون الموظفين أولاً.' }
+
+  const actorResult = await getAuthenticatedActor()
+  if ('error' in actorResult) return actorResult
+  if (!['president', 'vice_president', 'admin_manager', 'it_manager'].includes(actorResult.actor.role)) {
+    return { error: 'ليس لديك صلاحية حذف بيانات الموظفين.' }
+  }
+
+  const adminResult = createSupabaseAdminClient()
+  if ('error' in adminResult) return adminResult
+
+  let deletedEmployee: { id: string; full_name: string } | null
+  try {
+    const { data, error } = await adminResult.client
+      .from('employees')
+      .delete()
+      .eq('id', employeeId.trim())
+      .select('id, full_name')
+      .maybeSingle()
+
+    if (error) {
+      if (error.code === '23503') {
+        return { error: 'لا يمكن حذف الموظف لوجود سجلات مرتبطة به (إجازات، عهد، حضور). يرجى حذفها أولاً.' }
+      }
+      return { error: `تعذر حذف الموظف: ${error.message}` }
+    }
+    deletedEmployee = data
+  } catch (error) {
+    return { error: `تعذر حذف الموظف: ${error instanceof Error ? error.message : 'خطأ غير معروف.'}` }
+  }
+  if (!deletedEmployee) return { error: 'الموظف غير موجود أو تم حذفه مسبقاً.' }
+
+  try {
+    const { error: auditError } = await adminResult.client.from('audit_logs').insert({
+      actor_id: actorResult.actor.id,
+      actor_name: actorResult.actor.fullName || null,
+      actor_email: actorResult.actor.email,
+      action: 'delete',
+      details: `حذف بيانات الموظف: ${deletedEmployee.full_name || deletedEmployee.id}`,
+    })
+    if (auditError) {
+      console.error('Employee deletion audit log insert failed:', auditError)
+      return { success: true, warning: `تعذر تسجيل حركة الحذف: ${auditError.message}` }
+    }
+  } catch (error) {
+    console.error('Employee deletion audit log failed:', error)
+    return {
+      success: true,
+      warning: `تعذر تسجيل حركة الحذف: ${error instanceof Error ? error.message : 'خطأ غير معروف.'}`,
+    }
+  }
+  return { success: true }
+}
+
 export async function getEmployeesDashboardData(): Promise<DashboardResult> {
   try {
     const employeeId = await getHrEmployeeId()
