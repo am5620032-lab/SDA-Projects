@@ -94,7 +94,7 @@ export default function DelegationsPage() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex items-center justify-between rounded-xl border-r-8 border-indigo-600 bg-white p-6 shadow-sm">
           <div>
-            <h1 className="text-2xl font-bold text-indigo-700">قسم الندب والإعارة</h1>
+            <h1 className="text-2xl font-bold text-indigo-700">الندب والإعارة</h1>
             <p className="mt-1 text-sm text-gray-500">سجل الموظفين المنتدبين والمعارين</p>
           </div>
           <Link href="/dashboard/employees" className="rounded-lg bg-gray-100 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-200">

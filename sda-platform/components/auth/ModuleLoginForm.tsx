@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Archive, Building2, LockKeyhole, UsersRound } from 'lucide-react'
+import { Archive, ArrowRight, Building2, LockKeyhole, UsersRound } from 'lucide-react'
 import { moduleLogin } from '@/app/actions/module-login'
 import type { ModuleName } from '@/app/actions/module-login'
 
@@ -86,6 +87,13 @@ export default function ModuleLoginForm({
             {submitting ? 'جارٍ التحقق...' : 'دخول'}
           </button>
         </form>
+        <Link
+          href="/dashboard"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 transition-all duration-300 hover:border-slate-400 hover:bg-slate-50"
+        >
+          <ArrowRight size={18} aria-hidden="true" />
+          العودة إلى بوابة المنظومات
+        </Link>
       </section>
     </main>
   )
