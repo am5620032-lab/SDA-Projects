@@ -29,7 +29,7 @@ export default function LoginPage() {
   return (
     <main
       dir="rtl"
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#071713] p-4 font-sans sm:p-8"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-950 to-black p-4 font-sans sm:p-8"
       style={{
         backgroundImage: "linear-gradient(115deg, rgba(5, 20, 17, .9), rgba(8, 34, 30, .68)), url('https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=2400&q=85')",
         backgroundPosition: 'center',
@@ -38,7 +38,7 @@ export default function LoginPage() {
     >
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-emerald-400/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-amber-300/10 blur-3xl" />
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-7 text-white shadow-2xl shadow-black/40 backdrop-blur-md sm:p-10">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-7 text-white shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-10">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-2 shadow-lg shadow-black/20">
             <img src="/logo.jpg" alt="شعار الجهاز" className="h-full w-full object-contain" />
@@ -53,17 +53,17 @@ export default function LoginPage() {
             <label htmlFor="login-email" className="mb-2 block text-sm font-semibold text-slate-200">البريد الإلكتروني</label>
             <div className="relative">
               <Mail size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input id="login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="name@example.com" className="w-full rounded-xl border border-white/15 bg-slate-950/35 px-4 py-3.5 pl-11 text-left text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20" dir="ltr" />
+              <input id="login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="name@example.com" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 pl-11 text-left text-white outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20" dir="ltr" />
             </div>
           </div>
           <div>
             <label htmlFor="login-password" className="mb-2 block text-sm font-semibold text-slate-200">كلمة المرور</label>
             <div className="relative">
               <KeyRound size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full rounded-xl border border-white/15 bg-slate-950/35 px-4 py-3.5 pl-11 text-left text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20" dir="ltr" />
+              <input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 pl-11 text-left text-white outline-none transition-all duration-300 placeholder:text-gray-400 focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20" dir="ltr" />
             </div>
           </div>
-          <button type="submit" disabled={loading} className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-emerald-500 to-[#157A3F] py-3.5 font-bold text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-emerald-400 hover:to-emerald-600 hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="submit" disabled={loading} className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 py-3.5 font-bold text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-emerald-500 hover:to-emerald-700 hover:shadow-emerald-500/50 disabled:cursor-not-allowed disabled:opacity-60">
             {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
             {!loading && <ArrowLeft size={18} aria-hidden="true" className="transition-transform group-hover:-translate-x-1" />}
           </button>

@@ -67,7 +67,7 @@ export default function Sidebar() {
   const closeMobileMenu = () => setIsMobileOpen(false)
   const isEmployeeArea = pathname.startsWith('/dashboard/employees')
   const isProjectArea = pathname.startsWith('/dashboard/projects')
-  const isDark = isProjectArea
+  const isDark = isProjectArea || isEmployeeArea
 
   const renderLinks = (items: Array<{ href: string; label: string; icon: LucideIcon }>) => (
     <div className="space-y-1">
@@ -184,7 +184,7 @@ export default function Sidebar() {
           {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
-      <aside dir="rtl" className={`sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-l p-4 shadow-xl transition-colors md:flex ${isDark ? 'border-white/10 bg-[#0b1624] shadow-black/20' : 'border-gray-100 bg-white shadow-slate-900/5'}`}>
+      <aside dir="rtl" className={`sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-l p-4 shadow-xl backdrop-blur-md transition-colors md:flex ${isDark ? 'border-white/10 bg-slate-950/90 shadow-black/20' : 'border-gray-100 bg-white shadow-slate-900/5'}`}>
         <Link href="/dashboard" className={`mb-6 flex items-center gap-3 border-b pb-5 ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
           <img src="/logo.jpg" alt="شعار الجهاز" className="h-10 w-auto object-contain" />
           <span className={`font-bold ${isDark ? 'text-emerald-200' : 'text-[#157A3F]'}`}>بوابة المنظومات</span>
@@ -193,7 +193,7 @@ export default function Sidebar() {
         {logoutControl}
       </aside>
       {isMobileOpen && (
-        <aside dir="rtl" className={`flex min-h-[calc(100vh-57px)] flex-col border-b p-4 shadow-sm md:hidden ${isDark ? 'border-white/10 bg-[#0b1624]' : 'bg-white'}`}>
+        <aside dir="rtl" className={`flex min-h-[calc(100vh-57px)] flex-col border-b p-4 shadow-sm backdrop-blur-md md:hidden ${isDark ? 'border-white/10 bg-slate-950/95' : 'bg-white'}`}>
           <nav aria-label="القائمة الرئيسية" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">{navigation}</nav>
           {logoutControl}
         </aside>
