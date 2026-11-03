@@ -54,7 +54,7 @@ function NavigationLink({
       href={href}
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-300 ${active ? dark ? 'bg-emerald-300/15 font-bold text-emerald-200 shadow-sm shadow-emerald-950/20' : 'bg-emerald-50 font-bold text-[#157A3F]' : dark ? 'text-slate-300 hover:bg-white/10 hover:text-white' : 'text-gray-600 hover:bg-emerald-50 hover:font-bold hover:text-[#157A3F]'}`}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-300 ${active ? dark ? 'bg-slate-800 font-bold text-emerald-400 shadow-sm shadow-emerald-950/20' : 'bg-emerald-50 font-bold text-[#157A3F]' : dark ? 'text-slate-300 hover:bg-white/10 hover:text-white' : 'text-gray-600 hover:bg-emerald-50 hover:font-bold hover:text-[#157A3F]'}`}
     >
       {children}
     </Link>
@@ -67,7 +67,7 @@ export default function Sidebar() {
   const closeMobileMenu = () => setIsMobileOpen(false)
   const isEmployeeArea = pathname.startsWith('/dashboard/employees')
   const isProjectArea = pathname.startsWith('/dashboard/projects')
-  const isDark = isProjectArea || isEmployeeArea
+  const isDark = pathname.startsWith('/dashboard')
 
   const renderLinks = (items: Array<{ href: string; label: string; icon: LucideIcon }>) => (
     <div className="space-y-1">

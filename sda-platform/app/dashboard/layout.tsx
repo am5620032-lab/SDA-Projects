@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { headers } from 'next/headers'
 import Sidebar from '@/components/layout/Sidebar'
+import './dashboard-theme.css'
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const requestHeaders = await headers()
@@ -8,7 +9,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const isPrintPage = /^\/dashboard\/employees\/decisions\/[^/]+\/print$/.test(pathname)
 
   return (
-    <div dir="rtl" className="min-h-screen md:flex">
+    <div dir="rtl" className={`${isPrintPage ? '' : 'dashboard-theme'} min-h-screen md:flex`}>
       {!isPrintPage && (
         <Sidebar />
       )}
