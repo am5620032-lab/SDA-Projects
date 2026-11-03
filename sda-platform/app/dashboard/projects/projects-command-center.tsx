@@ -117,6 +117,8 @@ function KpiCard({
   icon: Icon,
   accent,
   gradient,
+  valueTone,
+  iconTone,
   note,
 }: {
   label: string
@@ -125,19 +127,22 @@ function KpiCard({
   icon: typeof Building2
   accent: string
   gradient: string
+  valueTone: string
+  iconTone: string
   note: string
 }) {
   return (
-    <article className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-5 shadow-xl shadow-black/10`}>
-      <div className={`absolute inset-y-0 right-0 w-1 ${accent}`} />
+    <article className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-5 shadow-[0_0_30px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20`}>
+      <div className={`pointer-events-none absolute -left-12 -top-14 h-36 w-36 rounded-full ${accent} opacity-[0.08] blur-3xl transition-opacity duration-300 group-hover:opacity-20`} />
+      <div className={`absolute inset-y-0 right-0 w-1 ${accent} shadow-[0_0_12px_currentColor]`} />
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-400">{label}</p>
-          <p className={`mt-4 font-black tracking-tight text-white ${value.length > 12 ? 'text-sm leading-6 sm:text-base' : 'text-3xl sm:text-4xl'}`}>{value}</p>
+          <p className={`mt-4 bg-gradient-to-l bg-clip-text font-black tracking-tight text-transparent ${value.startsWith('لم ') ? 'from-slate-300 to-slate-500' : valueTone} ${value.length > 12 ? 'text-sm leading-6 sm:text-base' : 'text-3xl sm:text-4xl'}`}>{value}</p>
           <p className="mt-2 text-xs text-slate-500">{unit}</p>
         </div>
-        <span className="rounded-xl border border-white/10 bg-white/5 p-3">
-          <Icon size={22} aria-hidden="true" />
+        <span className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors duration-300 group-hover:bg-white/10">
+          <Icon size={22} className={iconTone} aria-hidden="true" />
         </span>
       </div>
       <p className="mt-5 border-t border-white/10 pt-3 text-xs text-slate-500">{note}</p>
@@ -344,19 +349,19 @@ export default function ProjectsCommandCenter({
         )}
 
         <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <KpiCard label="المشاريع قيد التنفيذ" value={stats.inProgressProjects ? formatNumber(stats.inProgressProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع" icon={Activity} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
-          <KpiCard label="المشاريع المتأخرة" value={stats.overdueProjects ? formatNumber(stats.overdueProjects) : 'لم يتم إدخال بيانات بعد'} unit="تجاوزت تاريخ الانتهاء المخطط" icon={Clock3} accent="bg-orange-400" gradient="from-orange-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
-          <KpiCard label="المشاريع المتوقفة" value={stats.stoppedProjects ? formatNumber(stats.stoppedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
-          <KpiCard label="المشاريع المنجزة" value={stats.completedProjects ? formatNumber(stats.completedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع مكتمل" icon={Check} accent="bg-emerald-400" gradient="from-emerald-500/20 via-slate-900 to-slate-900" note="من المشاريع الموثقة" />
-          <KpiCard label="إجمالي الميزانيات التقديرية" value={stats.totalBudget ? formatNumber(stats.totalBudget) : 'لم يتم إدخال بيانات بعد'} unit="دينار ليبي" icon={Banknote} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900 to-slate-900" note="للمشاريع الموثقة" />
-          <KpiCard label="نسبة الإنجاز العام" value={stats.overallCompletionPercentage ? `${formatNumber(stats.overallCompletionPercentage, 1)}٪` : 'لم يتم إدخال بيانات بعد'} unit="متوسط إنجاز المحفظة" icon={Activity} accent="bg-violet-400" gradient="from-violet-500/20 via-slate-900 to-slate-900" note="للمشاريع الموثقة" />
-          <KpiCard label="الأراضي الزراعية" value={stats.agriculturalLandCount ? formatNumber(stats.agriculturalLandCount) : 'لم يتم إدخال بيانات بعد'} unit="قطعة مسجلة" icon={Sprout} accent="bg-lime-400" gradient="from-lime-500/20 via-slate-900 to-slate-900" note="من قاعدة الأراضي" />
-          <KpiCard label="الفرص الاستثمارية" value={stats.investmentOpportunitiesCount ? formatNumber(stats.investmentOpportunitiesCount) : 'لم يتم إدخال بيانات بعد'} unit="فرصة متاحة" icon={Building2} accent="bg-amber-400" gradient="from-amber-500/20 via-slate-900 to-slate-900" note="فرص مفتوحة للاستثمار" />
-          <KpiCard label="التوزيع الجغرافي" value={stats.geographicDistribution ? formatNumber(stats.geographicDistribution) : 'لم يتم إدخال بيانات بعد'} unit="بلدية ضمن المحفظة" icon={MapPinned} accent="bg-cyan-400" gradient="from-cyan-500/20 via-slate-900 to-slate-900" note="بلديات بها مشاريع موثقة" />
+          <KpiCard label="المشاريع قيد التنفيذ" value={stats.inProgressProjects ? formatNumber(stats.inProgressProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع" icon={Activity} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900/90 to-slate-900" valueTone="from-sky-200 to-cyan-400" iconTone="text-sky-300" note="من المشاريع الموثقة" />
+          <KpiCard label="المشاريع المتأخرة" value={stats.overdueProjects ? formatNumber(stats.overdueProjects) : 'لم يتم إدخال بيانات بعد'} unit="تجاوزت تاريخ الانتهاء المخطط" icon={Clock3} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900/90 to-slate-900" valueTone="from-rose-200 to-red-400" iconTone="text-rose-300" note="من المشاريع الموثقة" />
+          <KpiCard label="المشاريع المتوقفة" value={stats.stoppedProjects ? formatNumber(stats.stoppedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900/90 to-slate-900" valueTone="from-rose-200 to-red-400" iconTone="text-rose-300" note="من المشاريع الموثقة" />
+          <KpiCard label="المشاريع المنجزة" value={stats.completedProjects ? formatNumber(stats.completedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع مكتمل" icon={Check} accent="bg-emerald-400" gradient="from-emerald-500/20 via-slate-900/90 to-slate-900" valueTone="from-emerald-200 to-green-400" iconTone="text-emerald-300" note="من المشاريع الموثقة" />
+          <KpiCard label="إجمالي الميزانيات التقديرية" value={stats.totalBudget ? formatNumber(stats.totalBudget) : 'لم يتم إدخال بيانات بعد'} unit="دينار ليبي" icon={Banknote} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900/90 to-slate-900" valueTone="from-blue-200 to-cyan-400" iconTone="text-blue-300" note="للمشاريع الموثقة" />
+          <KpiCard label="نسبة الإنجاز العام" value={stats.overallCompletionPercentage ? `${formatNumber(stats.overallCompletionPercentage, 1)}٪` : 'لم يتم إدخال بيانات بعد'} unit="متوسط إنجاز المحفظة" icon={Activity} accent="bg-violet-400" gradient="from-violet-500/20 via-slate-900/90 to-slate-900" valueTone="from-violet-200 to-fuchsia-400" iconTone="text-violet-300" note="للمشاريع الموثقة" />
+          <KpiCard label="الأراضي الزراعية" value={stats.agriculturalLandCount ? formatNumber(stats.agriculturalLandCount) : 'لم يتم إدخال بيانات بعد'} unit="قطعة مسجلة" icon={Sprout} accent="bg-lime-400" gradient="from-lime-500/20 via-slate-900/90 to-slate-900" valueTone="from-lime-200 to-emerald-400" iconTone="text-lime-300" note="من قاعدة الأراضي" />
+          <KpiCard label="الفرص الاستثمارية" value={stats.investmentOpportunitiesCount ? formatNumber(stats.investmentOpportunitiesCount) : 'لم يتم إدخال بيانات بعد'} unit="فرصة متاحة" icon={Building2} accent="bg-amber-400" gradient="from-amber-500/20 via-slate-900/90 to-slate-900" valueTone="from-amber-200 to-yellow-400" iconTone="text-amber-300" note="فرص مفتوحة للاستثمار" />
+          <KpiCard label="التوزيع الجغرافي" value={stats.geographicDistribution ? formatNumber(stats.geographicDistribution) : 'لم يتم إدخال بيانات بعد'} unit="بلدية ضمن المحفظة" icon={MapPinned} accent="bg-cyan-400" gradient="from-cyan-500/20 via-slate-900/90 to-slate-900" valueTone="from-cyan-200 to-teal-400" iconTone="text-cyan-300" note="بلديات بها مشاريع موثقة" />
         </section>
 
         <section aria-label="التحليل التنفيذي للمحفظة" className="mb-6 grid gap-5 xl:grid-cols-2">
-          <article className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl shadow-black/10 md:p-6">
+          <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-slate-900/90 p-5 shadow-xl shadow-black/20 backdrop-blur-xl md:p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">مؤشر الإنجاز حسب الحالة</h2>
@@ -395,7 +400,7 @@ export default function ProjectsCommandCenter({
             </div>
           </article>
 
-          <article className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl shadow-black/10 md:p-6">
+          <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-slate-900/90 p-5 shadow-xl shadow-black/20 backdrop-blur-xl md:p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">الميزانيات حسب القطاع</h2>

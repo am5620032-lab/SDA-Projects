@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft, KeyRound, Mail, ShieldCheck } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -26,30 +27,53 @@ export default function LoginPage() {
   }
 
   return (
-    <main dir="rtl" className="flex min-h-screen items-center justify-center bg-slate-50 p-8 font-sans">
-      <div className="bg-white p-10 rounded-2xl shadow-xl max-w-md w-full border-t-8 border-[#157A3F]">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img src="/logo.jpg" alt="شعار الجهاز" className="h-24 w-auto object-contain" />
+    <main
+      dir="rtl"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#071713] p-4 font-sans sm:p-8"
+      style={{
+        backgroundImage: "linear-gradient(115deg, rgba(5, 20, 17, .9), rgba(8, 34, 30, .68)), url('https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=2400&q=85')",
+        backgroundPosition: 'center',
+        backgroundSize: 'cover',
+      }}
+    >
+      <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-emerald-400/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-amber-300/10 blur-3xl" />
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white/10 p-7 text-white shadow-2xl shadow-black/40 backdrop-blur-md sm:p-10">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-2 shadow-lg shadow-black/20">
+            <img src="/logo.jpg" alt="شعار الجهاز" className="h-full w-full object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-[#157A3F] mb-2">تسجيل الدخول</h1>
+          <p className="mb-2 text-xs font-bold tracking-[0.2em] text-emerald-200">جهاز تنمية وتطوير الجنوب</p>
+          <h1 className="text-3xl font-black text-white">تسجيل الدخول</h1>
+          <p className="mt-3 text-sm text-slate-300">أدخل بياناتك للوصول إلى بوابة المنظومات</p>
         </div>
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center">{error}</div>}
-        <form onSubmit={handleLogin} className="space-y-4">
+        {error && <div role="alert" className="mb-5 rounded-xl border border-red-300/30 bg-red-500/15 p-3 text-center text-sm text-red-100">{error}</div>}
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2 border rounded-lg text-left focus:ring-2 focus:ring-[#157A3F]" dir="ltr" />
+            <label htmlFor="login-email" className="mb-2 block text-sm font-semibold text-slate-200">البريد الإلكتروني</label>
+            <div className="relative">
+              <Mail size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input id="login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="name@example.com" className="w-full rounded-xl border border-white/15 bg-slate-950/35 px-4 py-3.5 pl-11 text-left text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20" dir="ltr" />
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-2 border rounded-lg text-left focus:ring-2 focus:ring-[#157A3F]" dir="ltr" />
+            <label htmlFor="login-password" className="mb-2 block text-sm font-semibold text-slate-200">كلمة المرور</label>
+            <div className="relative">
+              <KeyRound size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full rounded-xl border border-white/15 bg-slate-950/35 px-4 py-3.5 pl-11 text-left text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-emerald-300/70 focus:ring-2 focus:ring-emerald-300/20" dir="ltr" />
+            </div>
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-[#157A3F] hover:bg-[#0f5c2e] text-white font-bold py-3 rounded-lg transition-all">
-            {loading ? 'جاري الدخول...' : 'دخول'}
+          <button type="submit" disabled={loading} className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-emerald-500 to-[#157A3F] py-3.5 font-bold text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-emerald-400 hover:to-emerald-600 hover:shadow-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60">
+            {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
+            {!loading && <ArrowLeft size={18} aria-hidden="true" className="transition-transform group-hover:-translate-x-1" />}
           </button>
         </form>
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-[#157A3F] hover:underline">العودة للصفحة الرئيسية</Link>
+        <div className="mt-7 flex items-center justify-center gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
+          <ShieldCheck size={15} aria-hidden="true" className="text-emerald-300" />
+          <span>بوابة آمنة للأنظمة الحكومية</span>
+        </div>
+        <div className="mt-4 text-center">
+          <Link href="/" className="text-sm text-emerald-200 transition-colors duration-300 hover:text-white">العودة للصفحة الرئيسية</Link>
         </div>
       </div>
     </main>
