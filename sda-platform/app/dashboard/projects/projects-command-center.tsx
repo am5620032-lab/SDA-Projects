@@ -105,6 +105,8 @@ const initialForm: ProjectInput = {
   start_date: '',
   end_date: '',
   contractor_name: '',
+  latitude: null,
+  longitude: null,
 }
 
 const formatNumber = (value: number, maximumFractionDigits = 0) =>
@@ -661,6 +663,30 @@ export default function ProjectsCommandCenter({
                     {formField('الأولوية', 'priority_level', projectPriorities, 'text', true)}
                     {formField('الحالة', 'status', projectStatuses, 'text', true)}
                     {formField('المساحة (هكتار)', 'area_size', undefined, 'number')}
+                    <label className="block text-sm font-medium text-slate-300">
+                      خط العرض (Latitude)
+                      <input
+                        type="number"
+                        min={-90}
+                        max={90}
+                        step="any"
+                        value={form.latitude ?? ''}
+                        onChange={(event) => setForm({ ...form, latitude: event.target.value === '' ? null : Number(event.target.value) })}
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-300">
+                      خط الطول (Longitude)
+                      <input
+                        type="number"
+                        min={-180}
+                        max={180}
+                        step="any"
+                        value={form.longitude ?? ''}
+                        onChange={(event) => setForm({ ...form, longitude: event.target.value === '' ? null : Number(event.target.value) })}
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300"
+                      />
+                    </label>
                     <label className="block text-sm font-medium text-slate-300">
                       نسبة الإنجاز الحالية (%)
                       <input

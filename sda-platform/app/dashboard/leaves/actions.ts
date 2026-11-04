@@ -239,6 +239,91 @@ export async function requestLeave(input: {
   return { success: true, ...(warnings.length ? { warning: `تم تقديم الطلب. ${warnings.join(' ')}` } : {}) }
 }
 
+export async function deleteLeaveRequest(leaveId: string): Promise<MutationResult> {
+  const context = await getContext()
+  if ('error' in context) return context
+  if (typeof leaveId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(leaveId)) {
+    return { error: 'معرّف طلب الإجازة غير صالح.' }
+  }
+
+  const { data: deleted, error } = await context.client.from('leaves')
+    .delete()
+    .eq('id', leaveId)
+    .eq('employee_id', context.employeeId)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle()
+  if (error) return { error: `تعذر حذف طلب الإجازة: ${error.message}` }
+  if (!deleted) return { error: 'الطلب غير موجود أو لم يعد قيد الانتظار.' }
+
+  const auditError = await writeAudit('delete', `حذف طلب إجازة معلّق (${leaveId})`)
+  return { success: true, ...(auditError ? { warning: `تم حذف الطلب، لكن ${auditError}` } : {}) }
+}
+
+export async function updateLeaveRequest(
+  leaveId: string,
+  input: { leave_type: string; start_date: string; end_date: string; notes: string },
+): Promise<MutationResult> {
+  const context = await getContext()
+  if ('error' in context) return context
+  if (typeof leaveId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(leaveId)) {
+    return { error: 'معرّف طلب الإجازة غير صالح.' }
+  }
+  if (!input || typeof input !== 'object'
+    || typeof input.leave_type !== 'string'
+    || typeof input.start_date !== 'string'
+    || typeof input.end_date !== 'string'
+    || typeof input.notes !== 'string') {
+    return { error: 'يرجى تعبئة بيانات طلب الإجازة.' }
+  }
+
+  const start = Date.parse(`${input.start_date}T00:00:00Z`)
+  const end = Date.parse(`${input.end_date}T00:00:00Z`)
+  const daysCount = Math.floor((end - start) / 86_400_000) + 1
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.start_date)
+    || !/^\d{4}-\d{2}-\d{2}$/.test(input.end_date)
+    || !Number.isFinite(start)
+    || !Number.isFinite(end)
+    || new Date(start).toISOString().slice(0, 10) !== input.start_date
+    || new Date(end).toISOString().slice(0, 10) !== input.end_date
+    || daysCount < 1) {
+    return { error: 'تاريخ النهاية يجب أن يكون في يوم البداية أو بعده.' }
+  }
+  const leaveTypeName = input.leave_type.trim()
+  if (!leaveTypeName || leaveTypeName.length > 100 || input.notes.length > 2000) {
+    return { error: 'نوع الإجازة أو الملاحظات غير صالحة.' }
+  }
+
+  const { data: leaveType, error: typeError } = await context.client.from('leave_types')
+    .select('name, max_days_per_year')
+    .eq('name', leaveTypeName)
+    .maybeSingle()
+  if (typeError) return { error: `تعذر التحقق من نوع الإجازة: ${typeError.message}` }
+  if (!leaveType) return { error: 'نوع الإجازة المحدد غير موجود.' }
+  if (daysCount > leaveType.max_days_per_year) {
+    return { error: `المدة تتجاوز الحد السنوي لهذا النوع (${leaveType.max_days_per_year} يوماً).` }
+  }
+
+  const { data: updated, error } = await context.client.from('leaves')
+    .update({
+      leave_type: leaveTypeName,
+      start_date: input.start_date,
+      end_date: input.end_date,
+      days_count: daysCount,
+      notes: input.notes.trim() || null,
+    })
+    .eq('id', leaveId)
+    .eq('employee_id', context.employeeId)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle()
+  if (error) return { error: `تعذر تحديث طلب الإجازة: ${error.message}` }
+  if (!updated) return { error: 'الطلب غير موجود أو لم يعد قيد الانتظار.' }
+
+  const auditError = await writeAudit('update', `تعديل طلب إجازة معلّق (${leaveId}) إلى ${daysCount} يوماً`)
+  return { success: true, ...(auditError ? { warning: `تم تحديث الطلب، لكن ${auditError}` } : {}) }
+}
+
 export async function approveLeave(
   leaveId: string,
   status: 'approved' | 'rejected',

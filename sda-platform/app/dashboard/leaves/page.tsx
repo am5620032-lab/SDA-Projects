@@ -1,12 +1,16 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Pencil, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   approveLeave,
   approvePermission,
+  deleteLeaveRequest,
   getLeaveDashboardData,
   requestPermission,
   requestLeave,
+  updateLeaveRequest,
   type LeaveEmployee,
   type LeaveRequest,
   type LeaveType,
@@ -33,6 +37,7 @@ export default function LeavesPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false)
+  const [editingLeave, setEditingLeave] = useState<LeaveRequest | null>(null)
   const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [formData, setFormData] = useState<LeaveFormData>({
@@ -70,15 +75,40 @@ export default function LeavesPage() {
     setErrorMessage('')
 
     try {
-      const result = await requestLeave(formData)
+      const result = editingLeave
+        ? await updateLeaveRequest(editingLeave.id, formData)
+        : await requestLeave(formData)
       if ('error' in result) throw new Error(result.error)
 
       setIsModalOpen(false)
+      setEditingLeave(null)
       setFormData({ leave_type: '', start_date: '', end_date: '', notes: '' })
-      if (result.warning) setErrorMessage(result.warning)
+      if (editingLeave) toast.success('تم تحديث طلب الإجازة بنجاح.')
+      if (result.warning) toast.warning(result.warning)
       await fetchData()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'تعذر حفظ طلب الإجازة.')
+      const message = error instanceof Error ? error.message : 'تعذر حفظ طلب الإجازة.'
+      if (editingLeave) toast.error(message)
+      else setErrorMessage(message)
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteLeave = async (leave: LeaveRequest) => {
+    if (leave.status !== 'pending' || !window.confirm('هل تريد حذف طلب الإجازة المعلّق؟')) return
+    setLoading(true)
+    try {
+      const result = await deleteLeaveRequest(leave.id)
+      if ('error' in result) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('تم حذف طلب الإجازة.')
+      if (result.warning) toast.warning(result.warning)
+      await fetchData()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر حذف طلب الإجازة.')
+    } finally {
       setLoading(false)
     }
   }
@@ -159,7 +189,14 @@ export default function LeavesPage() {
                   : `الأذونات (${myPermissions.length})`}
             </h2>
             <button
-              onClick={() => activeTab === 'permissions' ? setIsPermissionModalOpen(true) : setIsModalOpen(true)}
+              onClick={() => {
+                if (activeTab === 'permissions') setIsPermissionModalOpen(true)
+                else {
+                  setEditingLeave(null)
+                  setFormData({ leave_type: '', start_date: '', end_date: '', notes: '' })
+                  setIsModalOpen(true)
+                }
+              }}
               className="bg-[#157A3F] text-white px-6 py-2 rounded-lg font-bold shadow-md"
             >
               {activeTab === 'permissions' ? '+ طلب إذن' : '+ طلب إجازة جديدة'}
@@ -256,6 +293,34 @@ export default function LeavesPage() {
                     <td className="p-3">
                       <div className="flex flex-wrap justify-center gap-2">
                         <button onClick={() => setSelectedLeave(l)} className="text-gray-600 bg-gray-100 px-3 py-1 rounded-lg hover:bg-gray-200">طباعة</button>
+                        {activeTab === 'requests' && l.status === 'pending' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingLeave(l)
+                                setFormData({
+                                  leave_type: l.leave_type,
+                                  start_date: l.start_date,
+                                  end_date: l.end_date,
+                                  notes: l.notes ?? '',
+                                })
+                                setIsModalOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1 text-amber-800 hover:bg-amber-100"
+                            >
+                              <Pencil size={14} aria-hidden="true" /> تعديل
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleDeleteLeave(l)}
+                              disabled={loading}
+                              className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1 text-red-700 hover:bg-red-100 disabled:opacity-50"
+                            >
+                              <Trash2 size={14} aria-hidden="true" /> حذف
+                            </button>
+                          </>
+                        )}
                         {activeTab === 'approvals' && (l.status === 'pending' || l.status === 'approved') && (
                           <>
                             {l.status === 'pending' && <button onClick={() => handleStatusChange(l, 'approved')} disabled={loading} className="text-green-600 bg-green-50 px-2 py-1 rounded disabled:opacity-50">موافقة</button>}
@@ -276,10 +341,10 @@ export default function LeavesPage() {
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-8 relative my-8">
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-4 left-4 font-bold text-xl text-gray-500 hover:text-red-500">✕</button>
+              <button onClick={() => { setIsModalOpen(false); setEditingLeave(null) }} className="absolute top-4 left-4 font-bold text-xl text-gray-500 hover:text-red-500">✕</button>
               
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-[#157A3F] mb-2">طلب إجازة جديد</h2>
+                <h2 className="text-3xl font-bold text-[#157A3F] mb-2">{editingLeave ? 'تعديل طلب الإجازة' : 'طلب إجازة جديد'}</h2>
                 <p className="text-gray-500">يرجى تعبئة البيانات التالية بدقة</p>
               </div>
 
@@ -330,8 +395,8 @@ export default function LeavesPage() {
 
                 {/* أزرار الإجراءات */}
                 <div className="pt-6 flex gap-4 border-t mt-6">
-                  <button type="submit" disabled={loading} className="flex-1 bg-[#157A3F] hover:bg-[#0f5c2e] text-white font-bold py-3 rounded-lg transition-all shadow-md disabled:opacity-50">{loading ? 'جارٍ الحفظ...' : 'تقديم الطلب'}</button>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-lg transition-all">إلغاء</button>
+                  <button type="submit" disabled={loading} className="flex-1 bg-[#157A3F] hover:bg-[#0f5c2e] text-white font-bold py-3 rounded-lg transition-all shadow-md disabled:opacity-50">{loading ? 'جارٍ الحفظ...' : editingLeave ? 'حفظ التعديلات' : 'تقديم الطلب'}</button>
+                  <button type="button" onClick={() => { setIsModalOpen(false); setEditingLeave(null) }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-lg transition-all">إلغاء</button>
                 </div>
               </form>
             </div>

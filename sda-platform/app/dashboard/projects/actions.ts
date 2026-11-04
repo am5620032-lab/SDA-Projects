@@ -26,6 +26,8 @@ export interface DevelopmentProject {
   start_date: string | null
   end_date: string | null
   contractor_name: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface ProjectFilters {
@@ -51,6 +53,8 @@ export interface ProjectInput {
   start_date: string
   end_date: string
   contractor_name: string
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface ProjectStatusCount {
@@ -205,6 +209,11 @@ export async function createProject(
   if (input.area_size > 1_000_000_000 || input.estimated_budget > 1_000_000_000_000_000) {
     return { error: 'المساحة أو الميزانية تتجاوز الحد المسموح.' }
   }
+  if ((input.latitude !== null && (!Number.isFinite(input.latitude) || input.latitude < -90 || input.latitude > 90))
+    || (input.longitude !== null && (!Number.isFinite(input.longitude) || input.longitude < -180 || input.longitude > 180))
+    || ((input.latitude === null) !== (input.longitude === null))) {
+    return { error: 'أدخل خطي عرض وطول صالحين معاً، أو اتركهما فارغين.' }
+  }
 
   const { data: projectCode, error: codeError } = await context.client.rpc(
     'next_development_project_code',
@@ -226,6 +235,8 @@ export async function createProject(
       start_date: startDate,
       end_date: endDate,
       contractor_name: contractorName || null,
+      latitude: input.latitude,
+      longitude: input.longitude,
       funding_source: fundingSource,
       priority_level: input.priority_level,
       status: input.status,

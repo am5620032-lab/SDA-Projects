@@ -5,6 +5,54 @@
   --font-sans: "Cairo", Arial, sans-serif;
 }
 
+.project-map .leaflet-container {
+  background: #0b1220;
+  font-family: inherit;
+}
+
+.project-map .leaflet-control-attribution,
+.project-map .leaflet-control-scale-line {
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: rgb(11 18 32 / 88%);
+  color: #cbd5e1;
+}
+
+.project-map .leaflet-control-attribution a {
+  color: #67e8f9;
+}
+
+.project-map .leaflet-bar a {
+  border-color: rgb(255 255 255 / 12%);
+  background: #111c2c;
+  color: #e2e8f0;
+}
+
+.project-map .leaflet-popup-content-wrapper,
+.project-map .leaflet-popup-tip {
+  background: #111c2c;
+  color: #f8fafc;
+}
+
+.project-map .leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.6;
+}
+
+.project-map-marker {
+  border: 0;
+  background: transparent;
+}
+
+.project-map-marker__dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 5px rgb(245 158 11 / 28%), 0 2px 6px rgb(0 0 0 / 60%);
+}
+
 button,
 a,
 input,

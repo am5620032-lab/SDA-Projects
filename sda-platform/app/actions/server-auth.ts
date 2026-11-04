@@ -723,6 +723,8 @@ export interface AdminDatabase {
           start_date: string | null
           end_date: string | null
           contractor_name: string | null
+          latitude: number | null
+          longitude: number | null
         }
         Insert: {
           id?: string
@@ -746,6 +748,8 @@ export interface AdminDatabase {
           start_date?: string | null
           end_date?: string | null
           contractor_name?: string | null
+          latitude?: number | null
+          longitude?: number | null
         }
         Update: {
           id?: string
@@ -769,6 +773,8 @@ export interface AdminDatabase {
           start_date?: string | null
           end_date?: string | null
           contractor_name?: string | null
+          latitude?: number | null
+          longitude?: number | null
         }
         Relationships: []
       }
