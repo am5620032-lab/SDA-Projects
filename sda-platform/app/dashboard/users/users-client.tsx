@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Archive, Building2, KeyRound, UsersRound } from 'lucide-react'
+import { toast } from 'sonner'
 import { createUser } from '@/app/actions/create-user'
 import { deleteUser } from '@/app/actions/delete-user'
 import { getAllUsers, type ManagedUser } from '@/app/actions/get-all-users'
 import { getAuditLogs, type AuditLog } from '@/app/actions/get-audit-logs'
-import { setUserBanned, updateUserRole } from '@/app/actions/manage-user'
+import { adminUpdatePassword, setUserBanned, updateUserRole } from '@/app/actions/manage-user'
 import {
   createModuleAccess,
   type ModuleAccount,
@@ -48,6 +49,9 @@ export default function UsersClient({
   const [roleDrafts, setRoleDrafts] = useState<Record<string, string>>({})
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [roleUser, setRoleUser] = useState<ManagedUser | null>(null)
+  const [passwordUser, setPasswordUser] = useState<ManagedUser | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordSaving, setPasswordSaving] = useState(false)
   const [moduleModalOpen, setModuleModalOpen] = useState(false)
   const [moduleSaving, setModuleSaving] = useState(false)
   const [moduleError, setModuleError] = useState('')
@@ -158,6 +162,29 @@ export default function UsersClient({
       setErrorMessage(error instanceof Error ? error.message : 'تعذر تحديث دور المستخدم.')
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!passwordUser) return
+
+    setPasswordSaving(true)
+    try {
+      const result = await adminUpdatePassword(passwordUser.id, newPassword)
+      if ('error' in result) {
+        toast.error(result.error)
+        return
+      }
+
+      toast.success(`تم تغيير كلمة مرور ${passwordUser.full_name || passwordUser.email || 'المستخدم'} بنجاح.`)
+      if (result.warning) toast.warning(result.warning)
+      setPasswordUser(null)
+      setNewPassword('')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تغيير كلمة المرور.')
+    } finally {
+      setPasswordSaving(false)
     }
   }
 
@@ -328,6 +355,17 @@ export default function UsersClient({
                             </button>
                             <button
                               type="button"
+                              onClick={() => {
+                                setNewPassword('')
+                                setPasswordUser(user)
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1 font-semibold text-blue-800 hover:bg-blue-100"
+                            >
+                              <KeyRound size={15} aria-hidden="true" />
+                              كلمة المرور
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleBanToggle(user)}
                               disabled={updatingId === user.id || currentUserId === user.id}
                               className={`rounded-lg px-3 py-1 font-semibold disabled:opacity-50 ${user.is_active ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}
@@ -385,6 +423,54 @@ export default function UsersClient({
               </div>
             )}
           </section>
+        )}
+
+        {passwordUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
+            <section role="dialog" aria-modal="true" aria-labelledby="password-reset-title" className="relative my-8 w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+              <button
+                type="button"
+                onClick={() => { setPasswordUser(null); setNewPassword('') }}
+                aria-label="إغلاق"
+                className="absolute left-4 top-4 text-xl font-bold text-gray-500 hover:text-red-600"
+              >
+                ×
+              </button>
+              <h2 id="password-reset-title" className="mb-2 text-xl font-bold text-[#157A3F]">تغيير كلمة المرور</h2>
+              <p className="mb-5 text-sm text-gray-600">{passwordUser.full_name || passwordUser.email || 'مستخدم'}</p>
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <label htmlFor="admin-new-password" className="block text-sm font-medium">
+                  كلمة المرور الجديدة
+                  <input
+                    id="admin-new-password"
+                    type="password"
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-left"
+                    dir="ltr"
+                  />
+                </label>
+                <p className="text-xs text-gray-500">ثمانية أحرف على الأقل.</p>
+                <div className="flex gap-3 border-t pt-4">
+                  <button type="submit" disabled={passwordSaving} className="flex-1 rounded-lg bg-[#157A3F] py-2.5 font-bold text-white disabled:opacity-60">
+                    {passwordSaving ? 'جارٍ الحفظ...' : 'حفظ'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPasswordUser(null); setNewPassword('') }}
+                    disabled={passwordSaving}
+                    className="flex-1 rounded-lg bg-gray-100 py-2.5 font-bold text-gray-700 disabled:opacity-60"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
         )}
 
         {moduleModalOpen && canManageUsers && (

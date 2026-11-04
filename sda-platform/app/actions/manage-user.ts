@@ -58,3 +58,23 @@ export async function setUserBanned(
   const audit = await logAction('update', `${banned ? 'إيقاف' : 'تفعيل'} حساب المستخدم ${userId}`)
   return { success: true, ...('error' in audit ? { warning: audit.error } : {}) }
 }
+
+export async function adminUpdatePassword(
+  userId: string,
+  newPassword: string,
+): Promise<{ success: true; warning?: string } | { error: string }> {
+  const context = await getManagerClient()
+  if ('error' in context) return context
+  if (!isUuid(userId)) return { error: 'بيانات المستخدم غير صالحة.' }
+  if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) {
+    return { error: 'يجب أن تكون كلمة المرور بين 8 و128 حرفاً.' }
+  }
+
+  const { error } = await context.client.auth.admin.updateUserById(userId, {
+    password: newPassword,
+  })
+  if (error) return { error: `تعذر تغيير كلمة المرور: ${error.message}` }
+
+  const audit = await logAction('update', `إعادة تعيين كلمة مرور المستخدم ${userId}`)
+  return { success: true, ...('error' in audit ? { warning: audit.error } : {}) }
+}
