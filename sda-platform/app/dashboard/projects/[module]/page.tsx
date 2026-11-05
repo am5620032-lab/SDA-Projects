@@ -6,6 +6,6 @@ export default async function LegacyProjectModulePage({
   params: Promise<{ module: string }>
 }) {
   const { module } = await params
-  if (module === 'database') redirect('/dashboard/projects')
+  if (module === 'database') redirect('/dashboard/projects/database')
   notFound()
 }

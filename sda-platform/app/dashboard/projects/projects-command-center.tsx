@@ -13,6 +13,7 @@ import {
   FilePlus2,
   MapPinned,
   PauseCircle,
+  Search,
   Sprout,
   TriangleAlert,
   X,
@@ -157,15 +158,18 @@ export default function ProjectsCommandCenter({
   initialStats,
   canVerify,
   initialError,
+  view = 'dashboard',
 }: {
   initialProjects: DevelopmentProject[]
   initialStats: ProjectStats | null
   canVerify: boolean
   initialError: string
+  view?: 'dashboard' | 'database'
 }) {
   const [projects, setProjects] = useState(initialProjects)
   const [stats, setStats] = useState(initialStats ?? emptyStats)
   const [filters, setFilters] = useState<ProjectFilters>({})
+  const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'finance' | 'needs'>('basic')
   const [form, setForm] = useState<ProjectInput>(initialForm)
@@ -178,6 +182,14 @@ export default function ProjectsCommandCenter({
     const values = new Set([...municipalities, ...initialProjects.map((project) => project.municipality)])
     return [...values].sort((a, b) => a.localeCompare(b, 'ar'))
   }, [initialProjects])
+  const visibleProjects = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('ar')
+    if (!query) return projects
+    return projects.filter((project) =>
+      project.project_name.toLocaleLowerCase('ar').includes(query)
+      || project.project_code.toLocaleLowerCase('ar').includes(query),
+    )
+  }, [projects, search])
 
   const applyFilters = async (nextFilters: ProjectFilters) => {
     setBusy(true)
@@ -217,11 +229,14 @@ export default function ProjectsCommandCenter({
       setForm(initialForm)
       setActiveTab('basic')
       setModalOpen(false)
-      const [projectsResult, statsResult] = await Promise.all([getProjects(filters), getProjectsStats()])
+      const projectsResult = await getProjects(filters)
       if ('error' in projectsResult) setErrorMessage(projectsResult.error)
       else setProjects(projectsResult.projects)
-      if ('stats' in statsResult) setStats(statsResult.stats)
-      else setErrorMessage((current) => [current, statsResult.error].filter(Boolean).join(' '))
+      if (view === 'dashboard') {
+        const statsResult = await getProjectsStats()
+        if ('stats' in statsResult) setStats(statsResult.stats)
+        else setErrorMessage((current) => [current, statsResult.error].filter(Boolean).join(' '))
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'تعذر إضافة المشروع.')
     } finally {
@@ -241,9 +256,11 @@ export default function ProjectsCommandCenter({
       }
 
       setProjects((current) => current.map((item) => item.id === project.id ? result.project : item))
-      const statsResult = await getProjectsStats()
-      if ('stats' in statsResult) setStats(statsResult.stats)
-      else setErrorMessage(statsResult.error)
+      if (view === 'dashboard') {
+        const statsResult = await getProjectsStats()
+        if ('stats' in statsResult) setStats(statsResult.stats)
+        else setErrorMessage(statsResult.error)
+      }
       setSuccessMessage(`تم توثيق بيانات المشروع ${project.project_code}.`)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'تعذر توثيق بيانات المشروع.')
@@ -253,7 +270,18 @@ export default function ProjectsCommandCenter({
   }
 
   const filtersView = (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <label className="relative block text-sm">
+        <Search size={16} aria-hidden="true" className="absolute right-3 top-3 text-slate-500" />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="ابحث باسم المشروع أو رقمه"
+          aria-label="البحث عن مشروع"
+          className="w-full rounded-xl border border-white/10 bg-slate-950 py-2.5 pe-9 ps-3 text-sm text-slate-200 placeholder:text-slate-500"
+        />
+      </label>
       <select aria-label="فلترة القطاع" value={filters.sector ?? ''} onChange={(event) => onFilterChange('sector', event.target.value)} className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-slate-200">
         <option value="">كل القطاعات</option>
         {projectSectors.map((sector) => <option key={sector} value={sector}>{sector}</option>)}
@@ -316,13 +344,15 @@ export default function ProjectsCommandCenter({
           <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-bold tracking-wide text-emerald-200">
-                <Activity size={14} aria-hidden="true" /> مركز القيادة الاستراتيجي
+                <Activity size={14} aria-hidden="true" /> {view === 'dashboard' ? 'مركز القيادة الاستراتيجي' : 'قاعدة بيانات المشاريع'}
               </div>
-              <h1 className="text-3xl font-black leading-tight text-white md:text-4xl">منظومة المشروعات والاستثمار الوطنية</h1>
+              <h1 className="text-3xl font-black leading-tight text-white md:text-4xl">{view === 'dashboard' ? 'منظومة المشروعات والاستثمار الوطنية' : 'قاعدة بيانات المشاريع'}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
-                صورة تنفيذية موحّدة لمحفظة التنمية في الجنوب، لمتابعة الأولويات والاحتياجات والتمويل عبر البلديات والقطاعات.
+                {view === 'dashboard'
+                  ? 'صورة تنفيذية موحّدة لمحفظة التنمية في الجنوب، لمتابعة الأولويات والاحتياجات والتمويل عبر البلديات والقطاعات.'
+                  : 'استعرض بيانات المشاريع وابحث عنها وصفّها حسب القطاع والبلدية والحالة والأولوية.'}
               </p>
-              <p className="mt-4 text-xs font-semibold tracking-widest text-amber-300/80">جهاز تنمية وتطوير الجنوب · لوحة الموقف التنفيذي</p>
+              {view === 'dashboard' && <p className="mt-4 text-xs font-semibold tracking-widest text-amber-300/80">جهاز تنمية وتطوير الجنوب · لوحة الموقف التنفيذي</p>}
             </div>
             <button
               type="button"
@@ -333,9 +363,9 @@ export default function ProjectsCommandCenter({
             </button>
           </div>
           <div className="relative mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/10 pt-4 text-xs text-slate-400">
-            <span className="inline-flex items-center gap-2"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> لوحة المتابعة متصلة</span>
+            <span className="inline-flex items-center gap-2"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> {view === 'dashboard' ? 'لوحة المتابعة متصلة' : 'قاعدة المشاريع متصلة'}</span>
             <span>آخر تحديث: {new Intl.DateTimeFormat('ar-LY', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date())}</span>
-            <span>المشاريع المعروضة: {formatNumber(projects.length)}</span>
+            <span>المشاريع المعروضة: {formatNumber(visibleProjects.length)}</span>
           </div>
         </header>
 
@@ -350,6 +380,7 @@ export default function ProjectsCommandCenter({
           </p>
         )}
 
+        {view === 'dashboard' && <>
         <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <KpiCard label="المشاريع قيد التنفيذ" value={stats.inProgressProjects ? formatNumber(stats.inProgressProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع" icon={Activity} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900/90 to-slate-900" valueTone="from-sky-200 to-cyan-400" iconTone="text-sky-300" note="من المشاريع الموثقة" />
           <KpiCard label="المشاريع المتأخرة" value={stats.overdueProjects ? formatNumber(stats.overdueProjects) : 'لم يتم إدخال بيانات بعد'} unit="تجاوزت تاريخ الانتهاء المخطط" icon={Clock3} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900/90 to-slate-900" valueTone="from-rose-200 to-red-400" iconTone="text-rose-300" note="من المشاريع الموثقة" />
@@ -526,15 +557,16 @@ export default function ProjectsCommandCenter({
             </div>
           </article>
         </section>
+        </>}
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-xl shadow-black/10">
+        {view === 'database' && <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-xl shadow-black/10">
           <div className="border-b border-white/10 p-5 md:p-6">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-xl font-black">سجل محفظة المشروعات</h2>
-                <p className="mt-1 text-sm text-slate-500">عرض ومقارنة المبادرات الاستراتيجية حسب الحالة والأولوية</p>
+                <h2 className="text-xl font-black">سجل المشاريع</h2>
+                <p className="mt-1 text-sm text-slate-500">البحث في المشاريع وتصفية بياناتها حسب معايير المحفظة</p>
               </div>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300">{formatNumber(projects.length)} مشروع</span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300">{formatNumber(visibleProjects.length)} مشروع</span>
             </div>
             {filtersView}
           </div>
@@ -556,7 +588,7 @@ export default function ProjectsCommandCenter({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.06]">
-                {projects.map((project) => (
+                {visibleProjects.map((project) => (
                   <tr id={`project-${project.id}`} key={project.id} className="transition hover:bg-white/[0.03]">
                     <td className="px-4 py-4">
                       <p className="font-bold text-white">{project.project_name}</p>
@@ -613,10 +645,10 @@ export default function ProjectsCommandCenter({
                 ))}
               </tbody>
             </table>
-            {!projects.length && (
+            {!visibleProjects.length && (
               <div className="px-6 py-14 text-center">
                 <Building2 className="mx-auto mb-3 text-slate-600" size={32} aria-hidden="true" />
-                <p className="font-semibold text-slate-300">لا توجد مشاريع مطابقة</p>
+                <p className="font-semibold text-slate-300">{search ? 'لا توجد مشاريع تطابق البحث' : 'لا توجد مشاريع مطابقة'}</p>
                 <p className="mt-1 text-sm text-slate-500">أضف مشروعاً جديداً أو غيّر معايير التصفية.</p>
               </div>
             )}
@@ -625,7 +657,7 @@ export default function ProjectsCommandCenter({
             <span>يعرض السجل المحفظة المتاحة حسب الفلاتر المختارة</span>
             <span>بيانات للمراجعة الاستراتيجية واتخاذ القرار</span>
           </div>
-        </section>
+        </section>}
       </div>
 
       {modalOpen && (

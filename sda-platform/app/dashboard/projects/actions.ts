@@ -160,6 +160,7 @@ export async function verifyProject(
 
   if (error) return { error: `تعذر توثيق المشروع: ${error.message}` }
   revalidatePath('/dashboard/projects')
+  revalidatePath('/dashboard/projects/database')
   return { success: true, project: data }
 }
 
@@ -248,6 +249,7 @@ export async function createProject(
 
   if (error) return { error: `تعذر حفظ المشروع: ${error.message}` }
   revalidatePath('/dashboard/projects')
+  revalidatePath('/dashboard/projects/database')
   return { success: true, project: data }
 }
 
