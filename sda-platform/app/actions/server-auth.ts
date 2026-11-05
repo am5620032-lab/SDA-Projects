@@ -723,6 +723,13 @@ export interface AdminDatabase {
           start_date: string | null
           end_date: string | null
           contractor_name: string | null
+          contractor_company: string | null
+          supervising_entity: string | null
+          engineer_name: string | null
+          planned_completion_percentage: number | null
+          actual_completion_percentage: number | null
+          financial_completion_percentage: number | null
+          delay_reasons: string | null
           latitude: number | null
           longitude: number | null
         }
@@ -748,6 +755,13 @@ export interface AdminDatabase {
           start_date?: string | null
           end_date?: string | null
           contractor_name?: string | null
+          contractor_company?: string | null
+          supervising_entity?: string | null
+          engineer_name?: string | null
+          planned_completion_percentage?: number | null
+          actual_completion_percentage?: number | null
+          financial_completion_percentage?: number | null
+          delay_reasons?: string | null
           latitude?: number | null
           longitude?: number | null
         }
@@ -773,6 +787,13 @@ export interface AdminDatabase {
           start_date?: string | null
           end_date?: string | null
           contractor_name?: string | null
+          contractor_company?: string | null
+          supervising_entity?: string | null
+          engineer_name?: string | null
+          planned_completion_percentage?: number | null
+          actual_completion_percentage?: number | null
+          financial_completion_percentage?: number | null
+          delay_reasons?: string | null
           latitude?: number | null
           longitude?: number | null
         }
@@ -784,6 +805,7 @@ export interface AdminDatabase {
           land_name: string
           area_size: number
           municipality: string
+          coordinates: string | null
           soil_type: string | null
           water_source: string | null
           status: string
@@ -795,6 +817,7 @@ export interface AdminDatabase {
           land_name: string
           area_size?: number
           municipality: string
+          coordinates?: string | null
           soil_type?: string | null
           water_source?: string | null
           status?: string
@@ -806,6 +829,7 @@ export interface AdminDatabase {
           land_name?: string
           area_size?: number
           municipality?: string
+          coordinates?: string | null
           soil_type?: string | null
           water_source?: string | null
           status?: string
@@ -1012,7 +1036,14 @@ export interface AdminDatabase {
       field_visits: {
         Row: {
           id: string
+          project_id: string | null
           visit_date: string
+          team_members: string | null
+          gps_coordinates: string | null
+          notes: string | null
+          violations: string | null
+          recommendations: string | null
+          status: string
           location: string
           purpose: string
           findings: string
@@ -1021,23 +1052,45 @@ export interface AdminDatabase {
         }
         Insert: {
           id?: string
+          project_id?: string | null
           visit_date: string
-          location: string
-          purpose: string
-          findings: string
-          visitor_name: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          visit_date?: string
+          team_members?: string | null
+          gps_coordinates?: string | null
+          notes?: string | null
+          violations?: string | null
+          recommendations?: string | null
+          status?: string
           location?: string
           purpose?: string
           findings?: string
           visitor_name?: string
           created_at?: string
         }
-        Relationships: []
+        Update: {
+          id?: string
+          project_id?: string | null
+          visit_date?: string
+          team_members?: string | null
+          gps_coordinates?: string | null
+          notes?: string | null
+          violations?: string | null
+          recommendations?: string | null
+          status?: string
+          location?: string
+          purpose?: string
+          findings?: string
+          visitor_name?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'field_visits_project_id_fkey'
+            columns: ['project_id']
+            isOneToOne: false
+            referencedRelation: 'development_projects'
+            referencedColumns: ['id']
+          },
+        ]
       }
       project_attachments: {
         Row: {
@@ -1062,6 +1115,102 @@ export interface AdminDatabase {
           file_url?: string
           file_name?: string
           attachment_type?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          id: string
+          contract_number: string
+          contractor_name: string
+          project_id: string | null
+          value: number
+          start_date: string | null
+          end_date: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          contract_number: string
+          contractor_name: string
+          project_id?: string | null
+          value?: number
+          start_date?: string | null
+          end_date?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          contract_number?: string
+          contractor_name?: string
+          project_id?: string | null
+          value?: number
+          start_date?: string | null
+          end_date?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      complaints: {
+        Row: {
+          id: string
+          citizen_name: string
+          phone: string | null
+          complaint_type: string
+          description: string
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          citizen_name: string
+          phone?: string | null
+          complaint_type: string
+          description: string
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          citizen_name?: string
+          phone?: string | null
+          complaint_type?: string
+          description?: string
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      investments: {
+        Row: {
+          id: string
+          title: string
+          sector: string
+          estimated_cost: number
+          status: string
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          sector: string
+          estimated_cost?: number
+          status?: string
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          sector?: string
+          estimated_cost?: number
+          status?: string
+          description?: string | null
           created_at?: string
         }
         Relationships: []

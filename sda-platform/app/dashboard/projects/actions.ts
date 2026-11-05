@@ -26,6 +26,13 @@ export interface DevelopmentProject {
   start_date: string | null
   end_date: string | null
   contractor_name: string | null
+  contractor_company: string | null
+  supervising_entity: string | null
+  engineer_name: string | null
+  planned_completion_percentage: number | null
+  actual_completion_percentage: number | null
+  financial_completion_percentage: number | null
+  delay_reasons: string | null
   latitude: number | null
   longitude: number | null
 }
@@ -53,6 +60,13 @@ export interface ProjectInput {
   start_date: string
   end_date: string
   contractor_name: string
+  contractor_company: string
+  supervising_entity: string
+  engineer_name: string
+  planned_completion_percentage: number
+  actual_completion_percentage: number
+  financial_completion_percentage: number
+  delay_reasons: string
   latitude: number | null
   longitude: number | null
 }
@@ -191,8 +205,12 @@ export async function createProject(
   }
   if (typeof input.start_date !== 'string'
     || typeof input.end_date !== 'string'
-    || typeof input.contractor_name !== 'string') {
-    return { error: 'بيانات المقاول أو التواريخ غير صالحة.' }
+    || typeof input.contractor_name !== 'string'
+    || typeof input.contractor_company !== 'string'
+    || typeof input.supervising_entity !== 'string'
+    || typeof input.engineer_name !== 'string'
+    || typeof input.delay_reasons !== 'string') {
+    return { error: 'بيانات المقاول أو الإشراف أو التواريخ غير صالحة.' }
   }
   const startDate = input.start_date || null
   const endDate = input.end_date || null
@@ -206,7 +224,23 @@ export async function createProject(
     return { error: 'تاريخ نهاية المشروع يجب أن يأتي بعد تاريخ البداية.' }
   }
   const contractorName = input.contractor_name.trim()
-  if (contractorName.length > 200) return { error: 'اسم المقاول يتجاوز الحد المسموح.' }
+  const contractorCompany = input.contractor_company.trim()
+  const supervisingEntity = input.supervising_entity.trim()
+  const engineerName = input.engineer_name.trim()
+  const delayReasons = input.delay_reasons.trim()
+  if ([contractorName, contractorCompany, supervisingEntity, engineerName].some((value) => value.length > 200)) {
+    return { error: 'أسماء المقاول والجهة المشرفة والمهندس لا تتجاوز 200 حرف.' }
+  }
+  if (delayReasons.length > 2000) return { error: 'أسباب التأخير لا تتجاوز 2000 حرف.' }
+  for (const [label, value] of [
+    ['المخطط', input.planned_completion_percentage],
+    ['الفعلي', input.actual_completion_percentage],
+    ['المالي', input.financial_completion_percentage],
+  ] as const) {
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      return { error: `نسبة الإنجاز ${label} يجب أن تكون بين 0 و100.` }
+    }
+  }
   if (input.area_size > 1_000_000_000 || input.estimated_budget > 1_000_000_000_000_000) {
     return { error: 'المساحة أو الميزانية تتجاوز الحد المسموح.' }
   }
@@ -236,6 +270,13 @@ export async function createProject(
       start_date: startDate,
       end_date: endDate,
       contractor_name: contractorName || null,
+      contractor_company: contractorCompany || null,
+      supervising_entity: supervisingEntity || null,
+      engineer_name: engineerName || null,
+      planned_completion_percentage: input.planned_completion_percentage,
+      actual_completion_percentage: input.actual_completion_percentage,
+      financial_completion_percentage: input.financial_completion_percentage,
+      delay_reasons: delayReasons || null,
       latitude: input.latitude,
       longitude: input.longitude,
       funding_source: fundingSource,

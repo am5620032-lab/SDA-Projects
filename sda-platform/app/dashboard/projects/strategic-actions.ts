@@ -88,7 +88,14 @@ export interface SectorProjectRow {
 
 export interface FieldVisitRow {
   id: string
+  project_id: string | null
   visit_date: string
+  team_members: string | null
+  gps_coordinates: string | null
+  notes: string | null
+  violations: string | null
+  recommendations: string | null
+  status: string
   location: string
   purpose: string
   findings: string
@@ -441,7 +448,16 @@ export async function getFieldVisits(): Promise<{ rows: FieldVisitRow[] } | { er
     .select('*')
     .order('visit_date', { ascending: false })
     .order('created_at', { ascending: false })
-  if (error) return { error: `تعذر جلب الزيارات الميدانية: ${error.message}` }
+  if (error) {
+    const schemaCacheError = error.code === 'PGRST200'
+      || error.code === 'PGRST204'
+      || /schema cache|could not find the .* column/i.test(error.message)
+    return {
+      error: schemaCacheError
+        ? 'مخطط جدول الزيارات غير محدث. شغّل supabase/migrations/create_field_visits.sql ثم حدّث مخطط قاعدة البيانات في Supabase.'
+        : `تعذر جلب الزيارات الميدانية: ${error.message}`,
+    }
+  }
   return { rows: data ?? [] }
 }
 
@@ -450,24 +466,64 @@ export async function createFieldVisit(formData: FormData): Promise<{ success: t
   if ('error' in context) return context
 
   const visitDate = String(formData.get('visit_date') ?? '')
-  const location = String(formData.get('location') ?? '').trim()
-  const purpose = String(formData.get('purpose') ?? '').trim()
-  const findings = String(formData.get('findings') ?? '').trim()
+  const projectId = String(formData.get('project_id') ?? '')
+  const teamMembers = String(formData.get('team_members') ?? '').trim()
+  const gpsCoordinates = String(formData.get('gps_coordinates') ?? '').trim()
+  const notes = String(formData.get('notes') ?? '').trim()
+  const violations = String(formData.get('violations') ?? '').trim()
+  const recommendations = String(formData.get('recommendations') ?? '').trim()
+  const status = String(formData.get('status') ?? '')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || Number.isNaN(Date.parse(visitDate))) {
     return { error: 'تاريخ الزيارة غير صالح.' }
   }
-  if (!location || location.length > 200) return { error: 'موقع الزيارة مطلوب.' }
-  if (!purpose || purpose.length > 1000) return { error: 'غرض الزيارة مطلوب ولا يتجاوز 1000 حرف.' }
-  if (!findings || findings.length > 5000) return { error: 'نتائج الزيارة مطلوبة ولا تتجاوز 5000 حرف.' }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) {
+    return { error: 'اختر مشروعاً صالحاً للزيارة.' }
+  }
+  if (!teamMembers || teamMembers.length > 1000) return { error: 'أسماء فريق الزيارة مطلوبة ولا تتجاوز 1000 حرف.' }
+  if (gpsCoordinates.length > 200) return { error: 'الإحداثيات لا تتجاوز 200 حرف.' }
+  if (notes.length > 5000 || violations.length > 3000 || recommendations.length > 3000) {
+    return { error: 'أحد حقول الملاحظات أو المخالفات أو التوصيات تجاوز الحد المسموح.' }
+  }
+  if (!['مجدولة', 'منفذة', 'تحتاج متابعة'].includes(status)) return { error: 'حالة الزيارة غير صالحة.' }
+
+  const { data: project, error: projectError } = await context.client
+    .from('development_projects')
+    .select('project_code, project_name, municipality')
+    .eq('id', projectId)
+    .maybeSingle()
+  if (projectError) return { error: `تعذر التحقق من المشروع: ${projectError.message}` }
+  if (!project) return { error: 'المشروع المحدد غير موجود.' }
+
+  const legacyFindings = [
+    notes && `ملاحظات: ${notes}`,
+    violations && `مخالفات: ${violations}`,
+    recommendations && `توصيات: ${recommendations}`,
+  ].filter(Boolean).join('\n')
 
   const { error } = await context.client.from('field_visits').insert({
+    project_id: projectId,
     visit_date: visitDate,
-    location,
-    purpose,
-    findings,
+    team_members: teamMembers,
+    gps_coordinates: gpsCoordinates || null,
+    notes: notes || null,
+    violations: violations || null,
+    recommendations: recommendations || null,
+    status,
+    location: `${project.project_name} - ${project.municipality}`.slice(0, 200),
+    purpose: `متابعة ميدانية للمشروع ${project.project_code}`,
+    findings: legacyFindings || 'لا توجد ملاحظات أو مخالفات أو توصيات.',
     visitor_name: context.actor.fullName || context.actor.email || 'مستخدم المنظومة',
   })
-  if (error) return { error: `تعذر تسجيل الزيارة الميدانية: ${error.message}` }
+  if (error) {
+    const schemaCacheError = error.code === 'PGRST200'
+      || error.code === 'PGRST204'
+      || /schema cache|could not find the .* column/i.test(error.message)
+    return {
+      error: schemaCacheError
+        ? 'مخطط جدول الزيارات غير محدث. شغّل supabase/migrations/create_field_visits.sql ثم حدّث مخطط قاعدة البيانات في Supabase.'
+        : `تعذر تسجيل الزيارة الميدانية: ${error.message}`,
+    }
+  }
 
   revalidatePath('/dashboard/projects/visits')
   return { success: true }

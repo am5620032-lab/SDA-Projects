@@ -106,6 +106,13 @@ const initialForm: ProjectInput = {
   start_date: '',
   end_date: '',
   contractor_name: '',
+  contractor_company: '',
+  supervising_entity: '',
+  engineer_name: '',
+  planned_completion_percentage: 0,
+  actual_completion_percentage: 0,
+  financial_completion_percentage: 0,
+  delay_reasons: '',
   latitude: null,
   longitude: null,
 }
@@ -324,6 +331,7 @@ export default function ProjectsCommandCenter({
           required={required}
           type={type}
           min={type === 'number' ? 0 : undefined}
+          max={type === 'number' && String(key).includes('percentage') ? 100 : undefined}
           step={type === 'number' ? 'any' : undefined}
           value={String(form[key])}
           onChange={(event) => setForm({
@@ -750,6 +758,22 @@ export default function ProjectsCommandCenter({
                     <label className="block text-sm font-medium text-slate-300 sm:col-span-2">
                       اسم المقاول
                       <input maxLength={200} value={form.contractor_name} onChange={(event) => setForm({ ...form, contractor_name: event.target.value })} className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300" />
+                    </label>
+                    {formField('الشركة المنفذة', 'contractor_company')}
+                    {formField('الجهة المشرفة', 'supervising_entity')}
+                    {formField('اسم المهندس المشرف', 'engineer_name')}
+                    {formField('نسبة الإنجاز المخطط (%)', 'planned_completion_percentage', undefined, 'number')}
+                    {formField('نسبة الإنجاز الفعلي (%)', 'actual_completion_percentage', undefined, 'number')}
+                    {formField('نسبة الإنجاز المالي (%)', 'financial_completion_percentage', undefined, 'number')}
+                    <label className="block text-sm font-medium text-slate-300 sm:col-span-2">
+                      أسباب التأخير
+                      <textarea
+                        rows={3}
+                        maxLength={2000}
+                        value={form.delay_reasons}
+                        onChange={(event) => setForm({ ...form, delay_reasons: event.target.value })}
+                        className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-amber-300"
+                      />
                     </label>
                     <div className="rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-sm leading-7 text-slate-300 sm:col-span-2">
                       <Banknote className="mb-2 text-amber-300" size={20} aria-hidden="true" />
