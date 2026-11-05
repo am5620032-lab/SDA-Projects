@@ -47,6 +47,7 @@ export interface AgriculturalLandRow {
   land_name: string
   area_size: number
   municipality: string
+  coordinates: string | null
   soil_type: string | null
   water_source: string | null
   status: string
@@ -72,6 +73,16 @@ export interface InvestmentOpportunityRow {
   estimated_cost: number
   target_investor: string | null
   status: string
+  created_at: string
+}
+
+export interface InvestmentRow {
+  id: string
+  title: string
+  sector: string
+  estimated_cost: number
+  status: string
+  description: string | null
   created_at: string
 }
 
@@ -304,6 +315,64 @@ export async function createAgriculturalLand(formData: FormData): Promise<{ succ
   })
   if (error) return { error: `تعذر إضافة الأرض الزراعية: ${error.message}` }
   revalidatePath('/dashboard/projects/lands')
+  revalidatePath('/dashboard/projects')
+  return { success: true }
+}
+
+export async function getLands(
+  municipalitySearch = '',
+  status = '',
+): Promise<{ rows: AgriculturalLandRow[] } | { error: string }> {
+  if (status && !['صالحة', 'تحتاج استصلاح'].includes(status)) return { error: 'حالة الأرض غير صالحة.' }
+  const result = await getAgriculturalLands(municipalitySearch)
+  if ('error' in result) return result
+  return { rows: status ? result.rows.filter((row) => row.status === status) : result.rows }
+}
+
+export async function createLand(formData: FormData): Promise<{ success: true } | { error: string }> {
+  return createAgriculturalLand(formData)
+}
+
+export async function getInvestments(): Promise<{ rows: InvestmentRow[] } | { error: string }> {
+  const context = await getStrategicClient()
+  if ('error' in context) return context
+  const { data, error } = await context.client
+    .from('investments')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) return { error: `تعذر جلب الفرص الاستثمارية: ${error.message}` }
+  return { rows: data ?? [] }
+}
+
+export async function createInvestment(formData: FormData): Promise<{ success: true } | { error: string }> {
+  const context = await getStrategicClient()
+  if ('error' in context) return context
+  if (!['admin_manager', 'it_manager'].includes(context.actor.role)) {
+    return { error: 'يقتصر إضافة الفرص الاستثمارية على مديري النظام.' }
+  }
+
+  const title = String(formData.get('title') ?? '').trim()
+  const sector = String(formData.get('sector') ?? '').trim()
+  const estimatedCost = Number(formData.get('estimated_cost'))
+  const status = String(formData.get('status') ?? '').trim()
+  const description = String(formData.get('description') ?? '').trim()
+  if (!title || title.length > 200) return { error: 'عنوان الفرصة مطلوب ولا يتجاوز 200 حرف.' }
+  if (!sector || sector.length > 150) return { error: 'القطاع مطلوب ولا يتجاوز 150 حرفاً.' }
+  if (!Number.isFinite(estimatedCost) || estimatedCost < 0 || estimatedCost > 1_000_000_000_000_000) {
+    return { error: 'التكلفة التقديرية غير صالحة.' }
+  }
+  if (!status || status.length > 100) return { error: 'حالة الفرصة مطلوبة ولا تتجاوز 100 حرف.' }
+  if (description.length > 5000) return { error: 'وصف الفرصة لا يتجاوز 5000 حرف.' }
+
+  const { error } = await context.client.from('investments').insert({
+    title,
+    sector,
+    estimated_cost: estimatedCost,
+    status,
+    description: description || null,
+  })
+  if (error) return { error: `تعذر إضافة الفرصة الاستثمارية: ${error.message}` }
+  revalidatePath('/dashboard/projects/investments')
   revalidatePath('/dashboard/projects')
   return { success: true }
 }
