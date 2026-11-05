@@ -26,10 +26,10 @@ export default async function ProjectsMapPage() {
           <p className="mt-2 text-sm text-slate-400">مواقع المشاريع المسجلة بإحداثيات جغرافية في جنوب ليبيا.</p>
         </header>
         {'error' in result && <p role="alert" className="mb-4 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{result.error}</p>}
-        <section aria-label="خريطة المشروعات" className="project-map mb-6 overflow-hidden rounded-xl border border-white/10 bg-slate-950 shadow-xl">
+        <section aria-label="خريطة المشروعات" className="project-map mb-6 overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-xl">
           <ProjectsMapLoader projects={projects} />
         </section>
-        <section className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/80">
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80">
           <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <h2 className="font-bold text-white">المشروعات ذات الإحداثيات</h2>
             <span className="text-sm tabular-nums text-slate-400">{projects.length}</span>

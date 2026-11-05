@@ -2,7 +2,10 @@
 
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CircleAlert, Plus, Search, Sprout } from 'lucide-react'
+import { CircleAlert, Search, Sprout, Wheat } from 'lucide-react'
+import EmptyState from '@/components/projects/EmptyState'
+import SectorHero from '@/components/projects/SectorHero'
+import SectorStats from '@/components/projects/SectorStats'
 import { createLand, getLands, type AgriculturalLandRow } from '../strategic-actions'
 
 const formatNumber = (value: number) => new Intl.NumberFormat('ar-LY', { maximumFractionDigits: 2 }).format(value)
@@ -24,6 +27,12 @@ export default function LandsWorkspace({
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(initialError)
   const [success, setSuccess] = useState('')
+  const latestUpdate = rows.reduce<string | null>((latest, row) => (
+    !latest || Date.parse(row.created_at) > Date.parse(latest) ? row.created_at : latest
+  ), null)
+  const lastUpdated = latestUpdate
+    ? new Intl.DateTimeFormat('ar-LY', { dateStyle: 'medium' }).format(new Date(latestUpdate))
+    : '—'
 
   async function filterByMunicipality(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -64,18 +73,25 @@ export default function LandsWorkspace({
   }
 
   return (
-    <main dir="rtl" className="min-h-full bg-[#07111f] p-5 text-white md:p-8">
+    <main dir="rtl" className="min-h-full bg-[#0F172A] p-5 text-white md:p-8">
       <div className="mx-auto max-w-[1400px]">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold text-emerald-300">منظومة الجنوب الاستراتيجية</p>
-            <h1 className="mt-1 text-2xl font-black text-white md:text-3xl">قاعدة بيانات الأراضي الزراعية</h1>
-            <p className="mt-2 text-sm text-slate-400">سجل الأراضي حسب البلدية والحالة وإمكانات الاستثمار.</p>
-          </div>
-          <button type="button" onClick={() => { setError(''); setFormOpen((open) => !open) }} className="inline-flex items-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-amber-200">
-            <Plus size={18} aria-hidden="true" /> إضافة أرض زراعية
+        <SectorHero
+          name="قاعدة بيانات الأراضي الزراعية"
+          englishName="Agriculture & Land"
+          description="سجل الأراضي حسب البلدية والحالة وإمكانات الاستثمار."
+          icon={Wheat}
+          color="#10B981"
+        />
+        <SectorStats
+          totalRecords={rows.length}
+          locations={new Set(rows.map((row) => row.municipality)).size}
+          lastUpdated={lastUpdated}
+        />
+        <div className="mb-5 flex justify-end">
+          <button type="button" onClick={() => { setError(''); setFormOpen((open) => !open) }} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-emerald-500">
+            <Sprout size={18} aria-hidden="true" /> إضافة أرض زراعية
           </button>
-        </header>
+        </div>
 
         {error && <p role="alert" className="mb-4 flex gap-2 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200"><CircleAlert size={18} />{error}</p>}
         {success && <p role="status" className="mb-4 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200">{success}</p>}
@@ -100,7 +116,7 @@ export default function LandsWorkspace({
           </div>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-xl">
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-xl backdrop-blur-md">
           <form onSubmit={filterByMunicipality} className="flex flex-wrap items-end gap-3 border-b border-white/10 p-5">
             <label className="min-w-60 flex-1 text-sm font-semibold text-slate-300">البحث بالبلدية
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="اسم البلدية" className="mt-1.5 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-white" />
@@ -125,7 +141,7 @@ export default function LandsWorkspace({
                 </tr>)}
               </tbody>
             </table>
-            {!rows.length && <p className="p-12 text-center text-sm text-slate-500">لا توجد أراضٍ مسجلة تطابق عوامل البحث.</p>}
+            {!rows.length && <div className="p-4"><EmptyState icon={Wheat} description="لا توجد أراضٍ مسجلة تطابق عوامل البحث." onAction={() => { setError(''); setFormOpen(true) }} /></div>}
           </div>
         </section>
       </div>

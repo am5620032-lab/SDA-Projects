@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import {
   Activity,
   ArrowUpRight,
@@ -42,18 +43,19 @@ import {
   type ProjectStats,
 } from './actions'
 import { projectPriorities, projectSectors, projectStatuses } from './project-options'
+import type { InvestmentOpportunityRow } from './strategic-actions'
 
 const municipalities = [
   'سبها', 'مرزق', 'أوباري', 'غات', 'بنت بية', 'وادي عتبة', 'الشاطئ',
   'الجفرة', 'القطرون', 'تراغن', 'تازربو', 'الكفرة', 'ربيانة', 'العوينات',
 ]
 
-const statusColors: Record<string, string> = {
-  منجز: '#34d399',
-  'قيد التنفيذ': '#38bdf8',
-  متوقف: '#fb7185',
-  'قيد الدراسة': '#a78bfa',
-  مقترح: '#94a3b8',
+const sectorColors: Record<string, string> = {
+  زراعة: '#10B981',
+  تعليم: '#A855F7',
+  صحة: '#F43F5E',
+  'بنية تحتية': '#8B5CF6',
+  إعمار: '#2563EB',
 }
 
 const priorityClasses: Record<string, string> = {
@@ -142,7 +144,7 @@ function KpiCard({
   note: string
 }) {
   return (
-    <article className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-5 shadow-[0_0_30px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20`}>
+    <article className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${gradient} p-5 shadow-[0_0_30px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:border-white/20`}>
       <div className={`pointer-events-none absolute -left-12 -top-14 h-36 w-36 rounded-full ${accent} opacity-[0.08] blur-3xl transition-opacity duration-300 group-hover:opacity-20`} />
       <div className={`absolute inset-y-0 right-0 w-1 ${accent} shadow-[0_0_12px_currentColor]`} />
       <div className="flex items-start justify-between gap-3">
@@ -165,16 +167,19 @@ export default function ProjectsCommandCenter({
   initialStats,
   canVerify,
   initialError,
+  initialOpportunities = [],
   view = 'dashboard',
 }: {
   initialProjects: DevelopmentProject[]
   initialStats: ProjectStats | null
   canVerify: boolean
   initialError: string
+  initialOpportunities?: InvestmentOpportunityRow[]
   view?: 'dashboard' | 'database'
 }) {
   const [projects, setProjects] = useState(initialProjects)
   const [stats, setStats] = useState(initialStats ?? emptyStats)
+  const [opportunities] = useState(initialOpportunities)
   const [filters, setFilters] = useState<ProjectFilters>({})
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -197,6 +202,13 @@ export default function ProjectsCommandCenter({
       || project.project_code.toLocaleLowerCase('ar').includes(query),
     )
   }, [projects, search])
+  const projectsBySector = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const project of projects) counts.set(project.sector, (counts.get(project.sector) ?? 0) + 1)
+    return projectSectors
+      .map((sector) => ({ sector, count: counts.get(sector) ?? 0 }))
+      .filter((entry) => entry.count > 0)
+  }, [projects])
 
   const applyFilters = async (nextFilters: ProjectFilters) => {
     setBusy(true)
@@ -345,10 +357,10 @@ export default function ProjectsCommandCenter({
   )
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#07111f] p-4 font-sans text-white md:p-7 xl:p-9">
+    <main dir="rtl" className="min-h-screen bg-[#0F172A] p-4 font-sans text-white md:p-7 xl:p-9">
       <div className="mx-auto max-w-[1600px]">
-        <header className="relative mb-6 overflow-hidden rounded-3xl border border-amber-300/20 bg-gradient-to-l from-[#172b39] via-[#10202d] to-[#0c1724] p-6 shadow-2xl shadow-black/30 md:p-8">
-          <div className="absolute -left-16 -top-24 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" />
+        <header className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-l from-blue-950/70 via-slate-900 to-[#0c1724] p-6 shadow-2xl shadow-black/30 md:p-8">
+          <div className="absolute -left-16 -top-24 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl" />
           <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-bold tracking-wide text-emerald-200">
@@ -360,12 +372,12 @@ export default function ProjectsCommandCenter({
                   ? 'صورة تنفيذية موحّدة لمحفظة التنمية في الجنوب، لمتابعة الأولويات والاحتياجات والتمويل عبر البلديات والقطاعات.'
                   : 'استعرض بيانات المشاريع وابحث عنها وصفّها حسب القطاع والبلدية والحالة والأولوية.'}
               </p>
-              {view === 'dashboard' && <p className="mt-4 text-xs font-semibold tracking-widest text-amber-300/80">جهاز تنمية وتطوير الجنوب · لوحة الموقف التنفيذي</p>}
+              {view === 'dashboard' && <p className="mt-4 text-xs font-semibold tracking-widest text-emerald-300/80">جهاز تنمية وتطوير الجنوب · لوحة الموقف التنفيذي</p>}
             </div>
             <button
               type="button"
               onClick={() => { setErrorMessage(''); setModalOpen(true) }}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-amber-300 to-yellow-500 px-5 py-3.5 font-black text-slate-950 shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 font-black text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-500"
             >
               <FilePlus2 size={19} aria-hidden="true" /> إضافة مشروع جديد
             </button>
@@ -389,7 +401,8 @@ export default function ProjectsCommandCenter({
         )}
 
         {view === 'dashboard' && <>
-        <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <section aria-label="مؤشرات الأداء الرئيسية" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="إجمالي المشاريع" value={formatNumber(stats.totalProjects)} unit="مشروع في المحفظة" icon={Building2} accent="bg-blue-400" gradient="from-blue-500/20 via-slate-900/90 to-slate-900" valueTone="from-blue-200 to-cyan-400" iconTone="text-blue-300" note="المشاريع الموثقة" />
           <KpiCard label="المشاريع قيد التنفيذ" value={stats.inProgressProjects ? formatNumber(stats.inProgressProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع" icon={Activity} accent="bg-sky-400" gradient="from-sky-500/20 via-slate-900/90 to-slate-900" valueTone="from-sky-200 to-cyan-400" iconTone="text-sky-300" note="من المشاريع الموثقة" />
           <KpiCard label="المشاريع المتأخرة" value={stats.overdueProjects ? formatNumber(stats.overdueProjects) : 'لم يتم إدخال بيانات بعد'} unit="تجاوزت تاريخ الانتهاء المخطط" icon={Clock3} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900/90 to-slate-900" valueTone="from-rose-200 to-red-400" iconTone="text-rose-300" note="من المشاريع الموثقة" />
           <KpiCard label="المشاريع المتوقفة" value={stats.stoppedProjects ? formatNumber(stats.stoppedProjects) : 'لم يتم إدخال بيانات بعد'} unit="مشروع يحتاج إلى تدخل" icon={PauseCircle} accent="bg-rose-400" gradient="from-rose-500/20 via-slate-900/90 to-slate-900" valueTone="from-rose-200 to-red-400" iconTone="text-rose-300" note="من المشاريع الموثقة" />
@@ -402,22 +415,22 @@ export default function ProjectsCommandCenter({
         </section>
 
         <section aria-label="التحليل التنفيذي للمحفظة" className="mb-6 grid gap-5 xl:grid-cols-2">
-          <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-slate-900/90 p-5 shadow-xl shadow-black/20 backdrop-blur-xl md:p-6">
+          <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-slate-900/90 p-5 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] md:p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold">مؤشر الإنجاز حسب الحالة</h2>
-                <p className="mt-1 text-xs text-slate-500">توزيع المشاريع الموثقة في المحفظة</p>
+                <h2 className="text-lg font-bold">توزيع المشاريع حسب القطاع</h2>
+                <p className="mt-1 text-xs text-slate-500">عدد المشاريع المسجلة في كل قطاع</p>
               </div>
               <Check className="text-emerald-300" size={21} aria-hidden="true" />
             </div>
             <div className="h-72">
-              {stats.totalProjects ? (
+              {projectsBySector.length ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={stats.projectsByStatus}
+                      data={projectsBySector}
                       dataKey="count"
-                      nameKey="status"
+                      nameKey="sector"
                       cx="50%"
                       cy="46%"
                       innerRadius={62}
@@ -426,10 +439,10 @@ export default function ProjectsCommandCenter({
                       stroke="rgba(255,255,255,0.12)"
                       label={({ name, value }) => `${name}: ${value}`}
                     >
-                      {stats.projectsByStatus.map((entry) => (
+                      {projectsBySector.map((entry) => (
                         <Cell
-                          key={entry.status}
-                          fill={statusColors[entry.status] ?? '#94a3b8'}
+                          key={entry.sector}
+                          fill={sectorColors[entry.sector] ?? '#94a3b8'}
                         />
                       ))}
                     </Pie>
@@ -437,11 +450,11 @@ export default function ProjectsCommandCenter({
                     <Legend verticalAlign="bottom" height={32} formatter={(value: string) => <span className="text-xs text-slate-300">{value}</span>} />
                   </PieChart>
                 </ResponsiveContainer>
-              ) : <div className="flex h-full items-center justify-center text-sm text-slate-500">لا توجد مشاريع موثقة لعرض توزيع الحالات.</div>}
+              ) : <div className="flex h-full items-center justify-center text-sm text-slate-500">لا توجد مشاريع لعرض توزيع القطاعات.</div>}
             </div>
           </article>
 
-          <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-slate-900/90 p-5 shadow-xl shadow-black/20 backdrop-blur-xl md:p-6">
+          <article className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-slate-900/90 p-5 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] md:p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">الميزانيات حسب القطاع</h2>
@@ -471,8 +484,43 @@ export default function ProjectsCommandCenter({
           </article>
         </section>
 
+        <section aria-label="الفرص الاستثمارية والخريطة" className="mb-6 grid gap-5 xl:grid-cols-2">
+          <article className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] md:p-6">
+            <header className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">أحدث الفرص الاستثمارية</h2>
+                <p className="mt-1 text-xs text-slate-400">الفرص المتاحة حالياً للمستثمرين</p>
+              </div>
+              <Building2 className="text-emerald-300" size={21} aria-hidden="true" />
+            </header>
+            <div className="divide-y divide-white/[0.06]">
+              {opportunities.slice(0, 5).map((opportunity) => (
+                <div key={opportunity.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-200">{opportunity.title}</p>
+                    <p className="mt-1 text-xs text-slate-400">{opportunity.sector} · {opportunity.estimated_cost ? `${formatNumber(Number(opportunity.estimated_cost))} د.ل` : 'التكلفة تحدد لاحقاً'}</p>
+                  </div>
+                  <span className="shrink-0 text-[11px] text-slate-500">{new Intl.DateTimeFormat('ar-LY', { dateStyle: 'medium' }).format(new Date(opportunity.created_at))}</span>
+                </div>
+              ))}
+              {!opportunities.length && <p className="py-8 text-center text-sm text-slate-500">لا توجد فرص استثمارية متاحة حالياً.</p>}
+            </div>
+          </article>
+          <Link href="/dashboard/projects/gis" className="group flex min-h-56 items-center justify-between gap-5 overflow-hidden rounded-2xl border border-blue-400/20 bg-gradient-to-l from-blue-600/20 via-blue-950/40 to-slate-900 p-6 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:border-blue-300/40 md:p-8">
+            <div>
+              <p className="text-xs font-bold tracking-wider text-blue-200">نظم المعلومات الجغرافية</p>
+              <h2 className="mt-2 text-2xl font-black text-white">الخريطة التفاعلية للمشاريع</h2>
+              <p className="mt-2 max-w-md text-sm leading-6 text-slate-300">استكشف مواقع المشاريع ومؤشرات التوزيع الجغرافي في بلديات الجنوب.</p>
+              <span className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition-colors group-hover:bg-blue-500">
+                فتح الخريطة <ArrowUpRight size={16} aria-hidden="true" />
+              </span>
+            </div>
+            <MapPinned size={64} strokeWidth={1.2} className="shrink-0 text-blue-300/70" aria-hidden="true" />
+          </Link>
+        </section>
+
         <section aria-label="القوائم التحليلية" className="mb-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-          <article className="rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+          <article className="rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-xl shadow-black/10 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02]">
             <header className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="font-bold text-white">ترتيب البلديات</h2>
@@ -511,7 +559,7 @@ export default function ProjectsCommandCenter({
             </div>
           </article>
 
-          <article className="rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+          <article className="rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-xl shadow-black/10 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02]">
             <header className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="font-bold text-white">أحدث المشاريع</h2>
@@ -539,7 +587,7 @@ export default function ProjectsCommandCenter({
             </div>
           </article>
 
-          <article className="rounded-2xl border border-rose-400/20 bg-gradient-to-br from-rose-950/30 via-slate-900/95 to-slate-900 p-5 shadow-xl shadow-rose-950/10 backdrop-blur-xl">
+          <article className="rounded-2xl border border-rose-400/20 bg-gradient-to-br from-rose-950/30 via-slate-900/95 to-slate-900 p-5 shadow-xl shadow-rose-950/10 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02]">
             <header className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="font-bold text-rose-100">تدخل عاجل</h2>

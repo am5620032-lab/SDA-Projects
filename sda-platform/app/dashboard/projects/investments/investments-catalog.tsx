@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Banknote, CircleAlert, HandCoins, Plus, X } from 'lucide-react'
+import EmptyState from '@/components/projects/EmptyState'
 import { createInvestment, getInvestments, type InvestmentRow } from '../strategic-actions'
 
 const formatNumber = (value: number) => new Intl.NumberFormat('ar-LY').format(value)
@@ -59,14 +60,14 @@ export default function InvestmentsCatalog({
       {error && <p role="alert" className="mb-4 flex gap-2 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200"><CircleAlert size={18} />{error}</p>}
       {success && <p role="status" className="mb-4 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200">{success}</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {investments.map((investment) => <article key={investment.id} className="flex flex-col rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-lg shadow-black/10 transition hover:border-emerald-300/30">
+        {investments.map((investment) => <article key={investment.id} className="flex flex-col rounded-2xl border border-white/10 bg-white/5 p-5 shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:border-emerald-300/30">
           <div className="flex items-start justify-between gap-3"><span className="rounded-xl bg-emerald-400/10 p-3 text-emerald-300"><HandCoins size={21} /></span><span className="rounded-full bg-sky-400/10 px-3 py-1 text-xs font-bold text-sky-200">{investment.status}</span></div>
           <h3 className="mt-4 text-lg font-black">{investment.title}</h3>
           <p className="mt-2 text-sm text-slate-400">{investment.sector}</p>
           <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/10 pt-4 text-sm"><span className="inline-flex items-center gap-2 text-slate-400"><Banknote size={16} /> التكلفة التقديرية</span><strong className="tabular-nums text-amber-200">{formatNumber(Number(investment.estimated_cost))} د.ل</strong></div>
           <button type="button" onClick={() => setSelected(investment)} className="mt-5 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold text-emerald-200 hover:bg-white/5">التفاصيل</button>
         </article>)}
-        {!investments.length && <p className="rounded-2xl border border-dashed border-white/15 bg-slate-900/60 p-10 text-center text-sm text-slate-400 md:col-span-2 xl:col-span-3">لا توجد فرص في سجل الاستثمارات حالياً.</p>}
+        {!investments.length && <div className="md:col-span-2 xl:col-span-3"><EmptyState icon={HandCoins} description="لا توجد فرص في سجل الاستثمارات حالياً." onAction={canManage ? () => setFormOpen(true) : undefined} /></div>}
       </div>
 
       {selected && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">

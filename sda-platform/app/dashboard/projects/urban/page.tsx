@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getAuthenticatedActor } from '@/app/actions/server-auth'
+import { sectorConfig } from '../sector-config'
 import { getSectorProjects } from '../strategic-actions'
 import SectorProjectsWorkspace from '../sector-projects-workspace'
 
@@ -18,6 +19,11 @@ export default async function UrbanDevelopmentPage() {
       sectors={['بنية تحتية']}
       rows={'rows' in result ? result.rows : []}
       initialError={'error' in result ? result.error : ''}
+      sectorAppearance={{
+        nameEn: sectorConfig.urban.nameEn,
+        icon: sectorConfig.urban.icon,
+        color: sectorConfig.urban.color,
+      }}
     />
   )
 }

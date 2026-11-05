@@ -1,6 +1,10 @@
 import { redirect } from 'next/navigation'
-import { CircleAlert, Mountain, ShieldCheck } from 'lucide-react'
+import { CircleAlert, ShieldCheck } from 'lucide-react'
 import { getAuthenticatedActor } from '@/app/actions/server-auth'
+import EmptyState from '@/components/projects/EmptyState'
+import SectorHero from '@/components/projects/SectorHero'
+import SectorStats from '@/components/projects/SectorStats'
+import { sectorConfig } from '../sector-config'
 import { getMineralResources } from '../strategic-actions'
 
 export const dynamic = 'force-dynamic'
@@ -16,31 +20,34 @@ export default async function MineralResourcesPage() {
   const rows = 'rows' in result ? result.rows : []
   const hasRestrictedAccess = ['president', 'it_manager'].includes(actorResult.actor.role)
   return (
-    <main dir="rtl" className="min-h-full p-5 md:p-8">
+    <main dir="rtl" className="min-h-full bg-[#0F172A] p-5 text-white md:p-8">
       <div className="mx-auto max-w-[1400px]">
-        <header className="mb-6">
-          <p className="text-sm font-bold text-emerald-700">منظومة الجنوب الاستراتيجية</p>
-          <h1 className="mt-1 flex items-center gap-2 text-2xl font-black text-slate-900 md:text-3xl"><Mountain aria-hidden="true" /> قاعدة بيانات الموارد الطبيعية والمعادن</h1>
-          <p className="mt-2 text-sm text-slate-500">سجل الموارد ومواقعها وحالة الاستكشاف والتصنيف الأمني.</p>
-        </header>
-        {!hasRestrictedAccess && <p className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><ShieldCheck size={18} /> الموارد المصنفة سرية واليورانيوم محجوبة عن دورك.</p>}
-        {'error' in result && <p role="alert" className="mb-4 flex gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><CircleAlert size={18} />{result.error}</p>}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <SectorHero
+          name={sectorConfig.minerals.nameAr}
+          englishName={sectorConfig.minerals.nameEn}
+          description={sectorConfig.minerals.description}
+          icon={sectorConfig.minerals.icon}
+          color={sectorConfig.minerals.color}
+        />
+        <SectorStats totalRecords={rows.length} locations={new Set(rows.map((row) => row.location)).size} lastUpdated="—" />
+        {!hasRestrictedAccess && <p className="mb-4 flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-200"><ShieldCheck size={18} /> الموارد المصنفة سرية واليورانيوم محجوبة عن دورك.</p>}
+        {'error' in result && <p role="alert" className="mb-4 flex gap-2 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200"><CircleAlert size={18} />{result.error}</p>}
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm backdrop-blur-md">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[850px] text-right text-sm">
-              <thead className="bg-slate-50 text-xs text-slate-500"><tr>{['المورد', 'الموقع', 'الإحداثيات', 'المساحة', 'حالة الاستكشاف', 'التصنيف'].map((title) => <th key={title} className="px-4 py-3">{title}</th>)}</tr></thead>
-              <tbody className="divide-y divide-slate-100">
+              <thead className="bg-slate-950/60 text-xs text-slate-400"><tr>{['المورد', 'الموقع', 'الإحداثيات', 'المساحة', 'حالة الاستكشاف', 'التصنيف'].map((title) => <th key={title} className="px-4 py-3">{title}</th>)}</tr></thead>
+              <tbody className="divide-y divide-white/[0.06]">
                 {rows.map((row) => <tr key={row.id}>
-                  <td className="px-4 py-4 font-bold text-slate-800">{row.resource_name}</td>
+                  <td className="px-4 py-4 font-bold text-white">{row.resource_name}</td>
                   <td className="px-4 py-4">{row.location}</td>
-                  <td className="px-4 py-4 font-mono text-xs text-slate-600" dir="ltr">{row.coordinates || '—'}</td>
+                  <td className="px-4 py-4 font-mono text-xs text-slate-400" dir="ltr">{row.coordinates || '—'}</td>
                   <td className="px-4 py-4 tabular-nums">{new Intl.NumberFormat('ar-LY', { maximumFractionDigits: 2 }).format(Number(row.area_size))} كم²</td>
                   <td className="px-4 py-4">{row.exploration_status}</td>
-                  <td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${row.classification === 'سري' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600'}`}>{row.classification}</span></td>
+                  <td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${row.classification === 'سري' ? 'bg-red-400/10 text-red-200' : 'bg-white/10 text-slate-300'}`}>{row.classification}</span></td>
                 </tr>)}
               </tbody>
             </table>
-            {!rows.length && !('error' in result) && <p className="p-12 text-center text-sm text-slate-500">لا توجد موارد معدنية متاحة للعرض.</p>}
+            {!rows.length && !('error' in result) && <div className="p-4"><EmptyState icon={sectorConfig.minerals.icon} description="لا توجد موارد معدنية متاحة للعرض حالياً." /></div>}
           </div>
         </section>
       </div>

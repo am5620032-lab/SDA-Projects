@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Banknote, CircleAlert, HandCoins, Send, X } from 'lucide-react'
+import { Banknote, CircleAlert, HandCoins, Send, TrendingUp, X } from 'lucide-react'
+import EmptyState from '@/components/projects/EmptyState'
 import { submitInvestmentApplication, type InvestmentOpportunityRow } from '../strategic-actions'
 
 const formatNumber = (value: number) => new Intl.NumberFormat('ar-LY', { maximumFractionDigits: 0 }).format(value)
@@ -49,17 +50,12 @@ export default function InvestmentsWorkspace({
   return (
     <main dir="rtl" className="text-white">
       <div className="mx-auto max-w-[1500px]">
-        <header className="mb-6 rounded-3xl bg-gradient-to-l from-emerald-900 to-slate-900 p-7 text-white shadow-xl md:p-9">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-xs font-bold text-emerald-100"><HandCoins size={15} aria-hidden="true" /> بوابة الاستثمار</div>
-          <h1 className="mt-4 text-3xl font-black md:text-4xl">الفرص الاستثمارية في الجنوب</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-emerald-50/75">استكشف الفرص المتاحة وقدّم طلب اهتمام أولياً لمراجعته من قبل فريق المنظومة.</p>
-        </header>
-
-        {error && <p role="alert" className="mb-4 flex gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><CircleAlert size={18} />{error}</p>}
-        {success && <p role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{success}</p>}
+        <header className="mb-5 flex items-center gap-2 text-sm text-slate-300"><HandCoins size={17} className="text-emerald-300" aria-hidden="true" /> استكشف الفرص المتاحة وقدّم طلب اهتمام أولياً لمراجعته من قبل فريق المنظومة.</header>
+        {error && <p role="alert" className="mb-4 flex gap-2 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200"><CircleAlert size={18} />{error}</p>}
+        {success && <p role="status" className="mb-4 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200">{success}</p>}
         <section aria-label="الفرص المتاحة" className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((opportunity) => (
-            <article key={opportunity.id} className="flex flex-col rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300/30 hover:shadow-lg">
+            <article key={opportunity.id} className="flex flex-col rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:border-emerald-300/30 hover:shadow-lg">
               <div className="flex items-start justify-between gap-3">
                 <span className="rounded-xl bg-emerald-50 p-3 text-emerald-700"><HandCoins size={21} aria-hidden="true" /></span>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">{opportunity.sector}</span>
@@ -78,7 +74,7 @@ export default function InvestmentsWorkspace({
               </button>
             </article>
           ))}
-          {!rows.length && <div className="rounded-2xl border border-dashed border-white/15 bg-slate-900 p-12 text-center text-sm text-slate-400 md:col-span-2 xl:col-span-3">لا توجد فرص استثمارية متاحة حالياً.</div>}
+          {!rows.length && <div className="md:col-span-2 xl:col-span-3"><EmptyState icon={TrendingUp} description="لا توجد فرص استثمارية متاحة حالياً." /></div>}
         </section>
       </div>
 
