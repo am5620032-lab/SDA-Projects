@@ -21,11 +21,11 @@ export default function ProjectsMap({ projects }: { projects: DevelopmentProject
       minZoom={4}
       maxZoom={16}
       scrollWheelZoom
-      className="h-[min(70vh,720px)] min-h-[420px] w-full"
+      className="h-[min(70vh,720px)] min-h-[420px] w-full invert hue-rotate-180 brightness-90 contrast-125 grayscale-[30%]"
     >
       <TileLayer
-        attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        attribution="&copy; OpenStreetMap contributors"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {projects.map((project) => (
         <Marker
